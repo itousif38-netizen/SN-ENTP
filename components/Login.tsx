@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Lock, User, ArrowRight, ShieldCheck, CreditCard, BadgeCheck, ArrowLeft } from 'lucide-react';
+import { Lock, User, ArrowRight, ShieldCheck, CreditCard, BadgeCheck, ArrowLeft } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (success: boolean) => void;
@@ -74,10 +74,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-fade-in-up duration-500">
         {/* Header / Logo Area */}
-        <div className="bg-slate-50 p-8 text-center border-b border-slate-100 relative overflow-hidden">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-blue-600 rounded-2xl shadow-lg shadow-blue-900/20 mb-6 relative group cursor-pointer">
-             <Building2 className="text-white w-12 h-12 relative z-10 transition-transform duration-500 group-hover:scale-110" />
-             <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-orange-500 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+        <div className="bg-slate-50 p-8 text-center border-b border-slate-100 relative overflow-hidden flex flex-col items-center">
+          <div className="w-28 h-28 mb-4 relative z-10 hover:scale-105 transition-transform duration-500">
+             <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M40 180 V 60 L 70 40 V 180" fill="#0ea5e9" />
+                  <path d="M75 180 V 20 L 125 10 V 180" fill="#0284c7" />
+                  <path d="M130 180 V 50 L 160 70 V 180" fill="#0ea5e9" />
+                  <circle cx="100" cy="100" r="70" stroke="#0f172a" strokeWidth="8" fill="none" />
+                  <text x="100" y="125" textAnchor="middle" fontFamily="sans-serif" fontWeight="900" fontSize="70" fill="#0f172a">SN</text>
+                  <path d="M 20 160 Q 100 220 180 140" stroke="#f97316" strokeWidth="10" fill="none" strokeLinecap="round" />
+             </svg>
           </div>
           <h1 className="text-5xl font-['Oswald'] font-black text-slate-900 tracking-tight relative z-10">SN <span className="text-orange-600">ENTERPRISE</span></h1>
           <p className="text-slate-500 text-sm mt-3 font-medium relative z-10">Construction Management System</p>

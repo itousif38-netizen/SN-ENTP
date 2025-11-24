@@ -53,9 +53,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOp
         {/* Header */}
         <div className="flex items-center justify-between h-24 px-6 bg-slate-950 border-b border-slate-800">
           <div className="flex items-center gap-3">
-             <div className="relative w-10 h-10 flex items-center justify-center bg-blue-600 rounded-lg overflow-hidden shadow-lg shadow-blue-900/50">
-                <Building2 className="text-white w-6 h-6 relative z-10" />
-                <div className="absolute -bottom-4 -right-4 w-10 h-10 bg-orange-500 rounded-full"></div>
+             <div className="relative w-12 h-12 flex-shrink-0">
+                <svg viewBox="0 0 200 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M40 180 V 60 L 70 40 V 180" fill="#0ea5e9" />
+                  <path d="M75 180 V 20 L 125 10 V 180" fill="#0284c7" />
+                  <path d="M130 180 V 50 L 160 70 V 180" fill="#0ea5e9" />
+                  <circle cx="100" cy="100" r="70" stroke="white" strokeWidth="8" fill="none" />
+                  <text x="100" y="125" textAnchor="middle" fontFamily="sans-serif" fontWeight="900" fontSize="70" fill="white">SN</text>
+                  <path d="M 20 160 Q 100 220 180 140" stroke="#f97316" strokeWidth="10" fill="none" strokeLinecap="round" />
+                </svg>
             </div>
             <div className="leading-none">
                 <span className="block font-['Oswald'] font-bold text-2xl tracking-wide text-white">SN</span>
