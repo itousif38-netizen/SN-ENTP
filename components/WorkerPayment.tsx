@@ -14,20 +14,16 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   
-  // Temporary state for work amount inputs
   const [workAmounts, setWorkAmounts] = useState<Record<string, number>>({});
   const [messDeductions, setMessDeductions] = useState<Record<string, number>>({});
 
   const projectWorkers = workers.filter(w => w.projectId === selectedProjectId);
   const selectedProjectName = projects.find(p => p.id === selectedProjectId)?.name || '';
 
-  // Helper to calculate auto deductions
   const getDeductions = (workerId: string) => {
-    // Kharchi: Sum of amounts for this worker in the selected month
     const workerKharchi = kharchi.filter(k => k.workerId === workerId && k.date.startsWith(selectedMonth));
     const totalKharchi = workerKharchi.reduce((sum, k) => sum + k.amount, 0);
 
-    // Advances: Sum of all advances for this worker for selected month
     const workerAdvances = advances.filter(a => a.workerId === workerId && a.date.startsWith(selectedMonth));
     const totalAdvance = workerAdvances.reduce((sum, a) => sum + a.amount, 0);
 
@@ -71,7 +67,6 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
       alert(`Saved ${paymentRecords.length} payment records for ${selectedMonth}`);
   };
 
-  // Format date for print header (e.g. "Oct/2025")
   const getFormattedMonth = (isoMonth: string) => {
       if(!isoMonth) return '';
       const [year, month] = isoMonth.split('-');
@@ -83,26 +78,42 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
     <div className="space-y-6">
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          @page {
+            size: A4;
+            margin: 10mm;
           }
-          #printable-payment, #printable-payment * {
-            visibility: visible;
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
           }
           #printable-payment {
+            visibility: visible;
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
+            margin: 0;
+            padding: 0;
             background: white;
-            padding: 20px;
+            color: black;
+            font-size: 11px;
           }
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          #printable-payment * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
 
-      {/* Screen View */}
       <div className="print:hidden space-y-6">
         <div className="flex justify-between items-start">
           <div>
@@ -217,7 +228,6 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
         )}
       </div>
 
-      {/* Print View (Hidden on Screen) */}
       <div id="printable-payment" className="hidden">
           <div className="flex flex-col items-center mb-6">
              <div className="flex items-center gap-3 mb-2">
@@ -227,7 +237,6 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
               </div>
                <h1 className="text-5xl font-['Oswald'] font-black text-black uppercase tracking-wide">SN ENTERPRISE</h1>
              </div>
-             {/* Specific Red Header requested */}
              <div className="w-full text-center mb-0">
                 <h2 className="text-lg font-bold text-red-600 border border-black border-b-0 py-1 bg-white">SN ENTERPRISE (PAYMENT SHEET)</h2>
                 <h2 className="text-md font-bold text-black border border-black border-b-0 py-1 bg-white">Worker Payment Sheet</h2>
@@ -282,7 +291,6 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
                   </tr>
                 );
               })}
-              {/* Empty Rows for spacing if needed */}
               {Array.from({ length: Math.max(0, 5 - projectWorkers.length) }).map((_, idx) => (
                   <tr key={`empty-${idx}`} className="h-12">
                       <td className="border border-black px-2 py-2"></td>

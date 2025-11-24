@@ -60,7 +60,6 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
     });
   };
 
-  // Helper to auto-calculate date + 6 days
   const handleStartDateChange = (date: string) => {
       const start = new Date(date);
       const end = new Date(start);
@@ -137,26 +136,42 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
     <div className="space-y-6">
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          @page {
+            size: A4;
+            margin: 10mm;
           }
-          #printable-mess, #printable-mess * {
-            visibility: visible;
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
           }
           #printable-mess {
+            visibility: visible;
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
+            margin: 0;
+            padding: 0;
             background: white;
-            padding: 20px;
+            color: black;
+            font-size: 11px;
           }
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          #printable-mess * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
 
-      {/* Screen View */}
       <div className="print:hidden space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -183,7 +198,6 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
           </div>
         </div>
 
-        {/* Filter */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
             <label className="block text-sm font-medium text-slate-700 mb-1">Filter by Project</label>
             <select 
@@ -196,7 +210,6 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
             </select>
         </div>
 
-        {/* Form */}
         {isFormOpen && (
            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-top-2">
              <h3 className="font-semibold mb-4 border-b pb-2">{editingId ? 'Edit Mess Bill' : 'New Mess Bill'}</h3>
@@ -301,7 +314,6 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
            </div>
         )}
 
-        {/* List View */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
              <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -326,7 +338,6 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
                                 </td>
                                 <td className="px-6 py-4 text-center font-bold text-lg align-top pt-6">{e.workerCount}</td>
                                 
-                                {/* Complex Cell to match Screenshot Layout */}
                                 <td className="px-6 py-2">
                                     <div className="border rounded-lg overflow-hidden text-sm">
                                         <div className="flex justify-between p-2 border-b bg-slate-50">
@@ -373,7 +384,6 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
         </div>
       </div>
 
-      {/* Print View */}
       <div id="printable-mess" className="hidden">
          <div className="flex flex-col items-center mb-6">
              <div className="flex items-center gap-3 mb-2">
@@ -407,7 +417,6 @@ const MessManager: React.FC<MessManagerProps> = ({ projects, messEntries, onAddM
                          <td className="border border-black px-2 py-2 text-center align-top">{formatDate(e.weekEndDate)}</td>
                          <td className="border border-black px-2 py-2 text-center align-top font-bold">{e.workerCount}</td>
                          
-                         {/* Replicating the stacked look inside the table cells for print as well */}
                          <td className="border border-black p-0 align-top">
                              <div className="border-b border-black px-2 py-1 text-center">{e.rate.toFixed(2)}</div>
                          </td>

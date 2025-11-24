@@ -67,7 +67,6 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
   const handleInputChange = (field: keyof PurchaseEntry, value: any) => {
       const updatedForm = { ...formData, [field]: value };
       
-      // Auto calculate total
       if (field === 'quantity' || field === 'rate') {
           const qty = field === 'quantity' ? Number(value) : (updatedForm.quantity || 0);
           const rate = field === 'rate' ? Number(value) : (updatedForm.rate || 0);
@@ -122,26 +121,42 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
     <div className="space-y-6">
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          @page {
+            size: A4;
+            margin: 10mm;
           }
-          #printable-purchase, #printable-purchase * {
-            visibility: visible;
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
           }
           #printable-purchase {
+            visibility: visible;
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
+            margin: 0;
+            padding: 0;
             background: white;
-            padding: 20px;
+            color: black;
+            font-size: 11px;
           }
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          #printable-purchase * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
 
-      {/* Screen View */}
       <div className="print:hidden space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -171,7 +186,6 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
           </div>
         </div>
 
-        {/* Filters & Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
                 <div className="flex-1">
@@ -188,9 +202,6 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     </div>
                 </div>
-                <div className="flex-1">
-                     {/* Placeholder for Date Filter if needed */}
-                </div>
             </div>
             <div className="bg-orange-600 rounded-xl p-4 text-white shadow-lg shadow-orange-900/20">
                 <div className="flex items-center gap-3 mb-2">
@@ -201,7 +212,6 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
             </div>
         </div>
 
-        {/* Input Form */}
         {isFormOpen && (
            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-top-2">
              <h3 className="font-semibold mb-4 text-slate-800 border-b pb-2">{editingId ? 'Edit Purchase Entry' : 'New Purchase Entry'}</h3>
@@ -299,7 +309,6 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
            </div>
         )}
 
-        {/* Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
              <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -342,7 +351,6 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
         </div>
       </div>
 
-      {/* Print View */}
       <div id="printable-purchase" className="hidden">
          <div className="flex flex-col items-center mb-6">
              <div className="flex items-center gap-3 mb-2">

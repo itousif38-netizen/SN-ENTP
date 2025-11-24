@@ -72,7 +72,6 @@ const AdvanceTracker: React.FC<AdvanceTrackerProps> = ({ projects, workers, adva
             paymentMode: formData.paymentMode || 'Cash'
         });
       }
-      // Reset
       setEditingId(null);
       setFormData({ workerId: '', amount: 0, paidBy: '', remarks: '', date: new Date().toISOString().split('T')[0], paymentMode: 'Cash' });
     }
@@ -87,7 +86,6 @@ const AdvanceTracker: React.FC<AdvanceTrackerProps> = ({ projects, workers, adva
       window.print();
   };
 
-  // Format date for print
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -98,22 +96,39 @@ const AdvanceTracker: React.FC<AdvanceTrackerProps> = ({ projects, workers, adva
     <div className="space-y-6">
         <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          @page {
+            size: A4;
+            margin: 10mm;
           }
-          #printable-advance, #printable-advance * {
-            visibility: visible;
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
           }
           #printable-advance {
+            visibility: visible;
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
+            margin: 0;
+            padding: 0;
             background: white;
-            padding: 20px;
+            color: black;
+            font-size: 11px;
           }
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          #printable-advance * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
 
@@ -123,7 +138,6 @@ const AdvanceTracker: React.FC<AdvanceTrackerProps> = ({ projects, workers, adva
             <p className="text-slate-500">Record and track worker salary advances.</p>
         </div>
 
-        {/* Project Selection & Form */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <div className="mb-6">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Select Project</label>
@@ -269,7 +283,7 @@ const AdvanceTracker: React.FC<AdvanceTrackerProps> = ({ projects, workers, adva
         )}
       </div>
 
-      {/* --- Printable Section (SN ENTERPRISE Layout) --- */}
+      {/* --- Printable Section --- */}
       <div id="printable-advance" className="hidden">
         <div className="flex flex-col items-center mb-6">
            <div className="flex items-center gap-3 mb-2">
@@ -317,7 +331,6 @@ const AdvanceTracker: React.FC<AdvanceTrackerProps> = ({ projects, workers, adva
                         </tr>
                     );
                 })}
-                 {/* Filler rows to look like Excel sheet */}
                  {Array.from({ length: Math.max(0, 10 - filteredAdvances.length) }).map((_, idx) => (
                     <tr key={`empty-${idx}`}>
                         <td className="border border-black px-2 py-3"></td>

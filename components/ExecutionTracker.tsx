@@ -22,7 +22,6 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({
 
   const filteredData = executionData.filter(e => e.projectId === selectedProjectId);
 
-  // Auto-adjust pour count if data exceeds current view
   useEffect(() => {
     let maxPours = 3;
     filteredData.forEach(item => {
@@ -55,7 +54,6 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({
       onUpdateExecution({ ...entry, levelName: value });
     } else if (field === 'pour' && typeof pourIndex === 'number' && subField) {
         const newPours = [...(entry.pours || [])];
-        // Ensure array is long enough
         while (newPours.length <= pourIndex) {
             newPours.push({});
         }
@@ -86,18 +84,42 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({
     <div className="space-y-6">
       <style>{`
         @media print {
-          body * { visibility: hidden; }
-          #printable-execution, #printable-execution * { visibility: visible; }
-          #printable-execution {
-            position: absolute; left: 0; top: 0; width: 100%;
-            background: white; padding: 20px;
+          @page {
+            size: A4 landscape;
+            margin: 10mm;
           }
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
+          }
+          #printable-execution {
+            visibility: visible;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: black;
+            font-size: 11px;
+          }
+          #printable-execution * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
 
-      {/* Screen View */}
       <div className="print:hidden space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -114,7 +136,6 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({
           </div>
         </div>
 
-        {/* Filters & Controls */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 items-end">
           <div className="w-full md:w-1/3">
             <label className="block text-sm font-medium text-slate-700 mb-1">Select Project</label>
@@ -257,7 +278,7 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({
             </thead>
             <tbody>
               {filteredData.map((row) => (
-                <tr key={row.id} className="bg-green-400 print:bg-green-400">
+                <tr key={row.id} className="bg-green-400">
                    <td className="border border-black px-2 py-3 font-bold">{row.levelName}</td>
                    {Array.from({ length: pourCount }).map((_, i) => (
                         <React.Fragment key={i}>

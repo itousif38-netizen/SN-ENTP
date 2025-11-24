@@ -14,7 +14,7 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   const [sundays, setSundays] = useState<string[]>([]);
   
-  // Local state to handle input changes before saving
+  // Local state to handle input changes before save
   const [inputValues, setInputValues] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -33,7 +33,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
   }, [selectedMonth]);
 
   useEffect(() => {
-    // Initialize inputs with existing data
     const values: Record<string, number> = {};
     kharchi.forEach(k => {
       values[`${k.workerId}-${k.date}`] = k.amount;
@@ -53,30 +52,23 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
 
   const handleSave = () => {
     const newEntries: KharchiEntry[] = [];
-    
-    // Fix: Iterate structurally through the current view's workers and sundays.
-    // This ensures we reconstruct the exact Date string and Worker ID without 
-    // relying on error-prone string splitting of the key.
     if (!selectedProjectId) return;
 
     projectWorkers.forEach(worker => {
         sundays.forEach(sunday => {
             const key = `${worker.id}-${sunday}`;
             const val = inputValues[key];
-            
-            // Check if user has entered/modified a value (val could be 0 which is valid)
             if (val !== undefined) {
                  newEntries.push({
                     id: key, 
                     workerId: worker.id,
                     projectId: selectedProjectId,
-                    date: sunday, // Use the actual date string (YYYY-MM-DD)
+                    date: sunday,
                     amount: Number(val)
                 });
             }
         });
     });
-    
     onUpdateKharchi(newEntries);
     alert("Kharchi records updated successfully!");
   };
@@ -85,7 +77,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
     window.print();
   };
 
-  // Calculations for summaries
   const siteSummaries = projects.map(p => {
     const total = kharchi
       .filter(k => k.projectId === p.id && k.date.startsWith(selectedMonth))
@@ -95,7 +86,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
 
   const totalAllSites = siteSummaries.reduce((sum, item) => sum + item.total, 0);
 
-  // Table totals (Live)
   const getWorkerTotal = (workerId: string) => {
       return sundays.reduce((sum, sunday) => sum + (inputValues[`${workerId}-${sunday}`] || 0), 0);
   };
@@ -108,7 +98,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
       return projectWorkers.reduce((sum, w) => sum + getWorkerTotal(w.id), 0);
   };
 
-  // Format date for print header (e.g. "October/25")
   const getFormattedMonth = (isoMonth: string) => {
       if(!isoMonth) return '';
       const [year, month] = isoMonth.split('-');
@@ -120,23 +109,39 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
     <div className="space-y-6">
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          @page {
+            size: A4 landscape;
+            margin: 10mm;
           }
-          #printable-area, #printable-area * {
-            visibility: visible;
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
           }
           #printable-area {
+            visibility: visible;
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
+            margin: 0;
+            padding: 0;
             background: white;
-            padding: 20px;
+            color: black;
+            font-size: 11px;
           }
-          /* Ensure backgrounds print */
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          #printable-area * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
 
@@ -147,7 +152,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
           <p className="text-slate-500">Track weekly Sunday payments to workers.</p>
         </div>
 
-        {/* Monthly Summary Section */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="bg-orange-600 rounded-xl p-4 text-white shadow-lg shadow-orange-900/20">
                 <div className="flex items-center gap-3 mb-2">
@@ -174,7 +178,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
             </div>
         </div>
 
-        {/* Selection Header */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-end">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Select Project to Edit</label>
@@ -198,7 +201,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
           </div>
         </div>
 
-        {/* Matrix Table */}
         {selectedProjectId && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
@@ -246,9 +248,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
                       </tr>
                     );
                   })}
-                  {projectWorkers.length === 0 && (
-                    <tr><td colSpan={sundays.length + 4} className="p-8 text-center text-slate-500">No workers found for this project.</td></tr>
-                  )}
                 </tbody>
                 <tfoot className="bg-slate-100 font-bold border-t border-slate-300">
                     <tr>
@@ -285,7 +284,7 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
         )}
       </div>
 
-      {/* --- Print Only View (Hidden on Screen) --- */}
+      {/* --- Print Only View --- */}
       <div id="printable-area" className="hidden">
         <div className="flex flex-col items-center mb-4">
            <div className="flex items-center gap-3 mb-2">
@@ -342,7 +341,6 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
                      </tr>
                  )
              })}
-             {/* Empty rows to fill space if needed, or total row */}
               <tr className="font-bold">
                   <td colSpan={2} className="border border-black px-2 py-3 text-right">Grand Total</td>
                    {sundays.map(sunday => (

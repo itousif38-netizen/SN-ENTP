@@ -36,11 +36,38 @@ const AIEstimator: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-6">
        <style>{`
         @media print {
-          body * { visibility: hidden; }
-          #printable-estimate, #printable-estimate * { visibility: visible; }
+          @page {
+            size: A4;
+            margin: 10mm;
+          }
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
+          }
           #printable-estimate {
-            position: absolute; left: 0; top: 0; width: 100%;
-            background: white; padding: 20px;
+            visibility: visible;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: black;
+            font-size: 11px;
+          }
+          #printable-estimate * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>

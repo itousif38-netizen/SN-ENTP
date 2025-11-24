@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project, Bill } from '../types';
 import { Percent, Filter, Building2, Download, ClipboardCheck } from 'lucide-react';
@@ -22,7 +21,6 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
   const totalGST = filteredBills.reduce((sum, b) => sum + (b.gstAmount || 0), 0);
   const totalGrand = filteredBills.reduce((sum, b) => sum + (b.grandTotal || b.amount), 0);
 
-  // Group data by Site for Checklist
   const siteSummaries = projects.map(project => {
       const projectBills = filteredBills.filter(b => b.projectId === project.id);
       if (projectBills.length === 0) return null;
@@ -35,7 +33,7 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
           gst: projectBills.reduce((sum, b) => sum + (b.gstAmount || 0), 0),
           total: projectBills.reduce((sum, b) => sum + (b.grandTotal || b.amount), 0)
       };
-  }).filter(Boolean); // Remove nulls (projects with no bills in current filter)
+  }).filter(Boolean);
 
   const getProjectName = (id: string) => projects.find(p => p.id === id)?.name || 'Unknown';
 
@@ -47,16 +45,43 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
     <div className="space-y-6">
        <style>{`
         @media print {
-          body * { visibility: hidden; }
-          #printable-gst, #printable-gst * { visibility: visible; }
+          @page {
+            size: A4;
+            margin: 10mm;
+          }
+          body {
+            visibility: hidden;
+            background: white;
+            overflow: visible;
+          }
           #printable-gst {
-            position: absolute; left: 0; top: 0; width: 100%;
-            background: white; padding: 20px;
+            visibility: visible;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: black;
+            font-size: 11px;
+          }
+          #printable-gst * {
+            visibility: visible;
+          }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black !important; padding: 4px; }
+          thead { display: table-header-group; }
+          tr { page-break-inside: avoid; }
+          .no-print { display: none !important; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>
 
-      <div className="flex justify-between items-start">
+      <div className="print:hidden flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">GST Dashboard</h1>
           <p className="text-slate-500">Track GST Liability by Site and Month.</p>
@@ -69,8 +94,7 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
+      <div className="print:hidden bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
          <div className="flex-1 w-full">
             <label className="block text-xs font-medium text-slate-500 mb-1">Filter by Project</label>
             <div className="relative">
@@ -99,8 +123,7 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
          </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="print:hidden grid grid-cols-1 md:grid-cols-3 gap-4">
          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
              <div className="text-slate-500 text-sm font-medium mb-1">Total Base Amount</div>
              <div className="text-2xl font-bold text-slate-900">₹{totalBase.toLocaleString('en-IN')}</div>
@@ -119,8 +142,7 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
          </div>
       </div>
 
-      {/* Site-wise Checklist */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="print:hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-purple-50 flex items-center gap-2">
               <ClipboardCheck className="text-purple-700" size={20} />
               <h3 className="font-bold text-purple-900">Site-wise GST Checklist</h3>
@@ -154,8 +176,7 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
           </div>
       </div>
 
-      {/* Detailed Bill List */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="print:hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-200">
               <h3 className="font-semibold text-slate-700">Detailed Bill Register</h3>
           </div>
@@ -191,7 +212,6 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
           </div>
       </div>
 
-      {/* Print Section */}
       <div id="printable-gst" className="hidden">
          <div className="flex flex-col items-center mb-6">
              <div className="flex items-center gap-3 mb-2">
@@ -206,7 +226,6 @@ const GSTDashboard: React.FC<GSTDashboardProps> = ({ projects, bills }) => {
              <p className="text-sm">Filter: {selectedProjectId === 'All' ? 'All Projects' : getProjectName(selectedProjectId)} {selectedMonth ? `| ${selectedMonth}` : ''}</p>
          </div>
 
-         {/* Site-wise Checklist for Print */}
          <div className="mb-6">
              <h3 className="font-bold border-b border-black mb-2">Site-wise Checklist Summary</h3>
              <table className="w-full border-collapse border border-black text-sm">
