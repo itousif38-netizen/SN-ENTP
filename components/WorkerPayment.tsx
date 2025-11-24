@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Project, Worker, KharchiEntry, AdvanceEntry, WorkerPayment as WorkerPaymentType } from '../types';
-import { HandCoins, Download, Building2, Save } from 'lucide-react';
+import { HandCoins, Download, Building2, Save, FileText } from 'lucide-react';
 
 interface WorkerPaymentProps {
   projects: Project[];
@@ -13,6 +14,7 @@ interface WorkerPaymentProps {
 const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharchi, advances, onSavePaymentRecord }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+  const [printMode, setPrintMode] = useState<'sheet' | 'slips'>('sheet');
   
   const [workAmounts, setWorkAmounts] = useState<Record<string, number>>({});
   const [messDeductions, setMessDeductions] = useState<Record<string, number>>({});
@@ -30,8 +32,12 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
     return { totalKharchi, totalAdvance };
   };
 
-  const handleExportPDF = () => {
-    window.print();
+  const handlePrint = (mode: 'sheet' | 'slips') => {
+    setPrintMode(mode);
+    // Timeout ensures state updates and DOM renders before print dialog opens
+    setTimeout(() => {
+        window.print();
+    }, 100);
   };
 
   const handleSave = () => {
@@ -71,7 +77,7 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
       if(!isoMonth) return '';
       const [year, month] = isoMonth.split('-');
       const date = new Date(parseInt(year), parseInt(month) - 1);
-      return `${date.toLocaleString('default', { month: 'short' })}/${year}`;
+      return `${date.toLocaleString('default', { month: 'long' })} ${year}`;
   };
 
   return (
@@ -98,6 +104,7 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
             background: white;
             color: black;
             font-size: 11px;
+            display: block !important;
           }
           #printable-payment * {
             visibility: visible;
@@ -106,6 +113,7 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
           th, td { border: 1px solid black !important; padding: 4px; }
           thead { display: table-header-group; }
           tr { page-break-inside: avoid; }
+          .page-break { page-break-after: always; }
           .no-print { display: none !important; }
           * {
             -webkit-print-color-adjust: exact !important;
@@ -145,11 +153,18 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
           </div>
           <div className="flex items-end gap-2">
              <button 
-                onClick={handleExportPDF}
+                onClick={() => handlePrint('sheet')}
                 disabled={!selectedProjectId}
                 className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                <Download size={18} /> Export PDF
+                <Download size={18} /> Print Sheet
+              </button>
+              <button 
+                onClick={() => handlePrint('slips')}
+                disabled={!selectedProjectId}
+                className="bg-slate-800 text-white px-4 py-2 rounded-lg font-medium hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <FileText size={18} /> Print Slips
               </button>
              <button 
                 onClick={handleSave}
@@ -228,83 +243,184 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
         )}
       </div>
 
+      {/* PRINT AREA */}
       <div id="printable-payment" className="hidden">
-          <div className="flex flex-col items-center mb-6">
-             <div className="flex items-center gap-3 mb-2">
-               <div className="relative w-12 h-12 flex items-center justify-center bg-blue-600 rounded-xl overflow-hidden border border-black">
-                  <Building2 className="text-white w-8 h-8 relative z-10" />
-                  <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-orange-500 rounded-full"></div>
-              </div>
-               <h1 className="text-5xl font-['Oswald'] font-black text-black uppercase tracking-wide">SN ENTERPRISE</h1>
-             </div>
-             <div className="w-full text-center mb-0">
-                <h2 className="text-lg font-bold text-red-600 border border-black border-b-0 py-1 bg-white">SN ENTERPRISE (PAYMENT SHEET)</h2>
-                <h2 className="text-md font-bold text-black border border-black border-b-0 py-1 bg-white">Worker Payment Sheet</h2>
-             </div>
+        {printMode === 'sheet' ? (
+          /* --- SHEET LAYOUT --- */
+          <>
+            <div className="flex flex-col items-center mb-6">
+               <div className="flex items-center gap-3 mb-2">
+                 <div className="relative w-12 h-12 flex items-center justify-center bg-blue-600 rounded-xl overflow-hidden border border-black">
+                    <Building2 className="text-white w-8 h-8 relative z-10" />
+                    <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-orange-500 rounded-full"></div>
+                </div>
+                 <h1 className="text-5xl font-['Oswald'] font-black text-black uppercase tracking-wide">SN ENTERPRISE</h1>
+               </div>
+               <div className="w-full text-center mb-0">
+                  <h2 className="text-lg font-bold text-red-600 border border-black border-b-0 py-1 bg-white">SN ENTERPRISE (PAYMENT SHEET)</h2>
+                  <h2 className="text-md font-bold text-black border border-black border-b-0 py-1 bg-white">Worker Payment Sheet</h2>
+               </div>
+            </div>
+
+            <div className="flex border border-black border-b-0">
+               <div className="flex-1 px-2 py-1 font-bold border-r border-black">Site- {selectedProjectName}</div>
+               <div className="px-2 py-1 font-bold text-right min-w-[200px]">Month- {getFormattedMonth(selectedMonth)}</div>
+            </div>
+
+            <table className="w-full text-left border-collapse border border-black text-sm">
+              <thead>
+                <tr>
+                  <th className="border border-black px-2 py-2 text-center w-10">SR</th>
+                  <th className="border border-black px-2 py-2 text-center">Worker Name</th>
+                  <th className="border border-black px-2 py-2 text-center w-24">Total</th>
+                  <th className="border border-black px-2 py-2 text-center w-24">Kharchi</th>
+                  <th className="border border-black px-2 py-2 text-center w-24">Mess</th>
+                  <th className="border border-black px-2 py-2 text-center w-24">Advance</th>
+                  <th className="border border-black px-2 py-2 text-center w-28">Net Payment</th>
+                  <th className="border border-black px-2 py-2 text-center w-40">Signature</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projectWorkers.map((worker) => {
+                  const { totalKharchi, totalAdvance } = getDeductions(worker.id);
+                  const workVal = workAmounts[worker.id] || 0;
+                  const messVal = messDeductions[worker.id] || 0;
+                  const netPayable = workVal - messVal - totalKharchi - totalAdvance;
+
+                  return (
+                    <tr key={worker.id} className="h-12">
+                      <td className="border border-black px-2 py-2 text-center">{worker.serialNo}</td>
+                      <td className="border border-black px-2 py-2 text-center font-medium">{worker.name}</td>
+                      <td className="border border-black px-2 py-2 text-center font-bold">
+                         {workVal > 0 ? workVal.toLocaleString('en-IN') : ''}
+                      </td>
+                      <td className="border border-black px-2 py-2 text-center">
+                         {totalKharchi > 0 ? totalKharchi.toLocaleString('en-IN') : ''}
+                      </td>
+                      <td className="border border-black px-2 py-2 text-center">
+                         {messVal > 0 ? messVal.toLocaleString('en-IN') : ''}
+                      </td>
+                      <td className="border border-black px-2 py-2 text-center">
+                         {totalAdvance > 0 ? totalAdvance.toLocaleString('en-IN') : ''}
+                      </td>
+                      <td className="border border-black px-2 py-2 text-center font-bold">
+                         {netPayable.toLocaleString('en-IN')}
+                      </td>
+                      <td className="border border-black px-2 py-2"></td>
+                    </tr>
+                  );
+                })}
+                {Array.from({ length: Math.max(0, 5 - projectWorkers.length) }).map((_, idx) => (
+                    <tr key={`empty-${idx}`} className="h-12">
+                        <td className="border border-black px-2 py-2"></td>
+                        <td className="border border-black px-2 py-2"></td>
+                        <td className="border border-black px-2 py-2"></td>
+                        <td className="border border-black px-2 py-2"></td>
+                        <td className="border border-black px-2 py-2"></td>
+                        <td className="border border-black px-2 py-2"></td>
+                        <td className="border border-black px-2 py-2"></td>
+                        <td className="border border-black px-2 py-2"></td>
+                    </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : (
+          /* --- INDIVIDUAL SLIPS LAYOUT --- */
+          <div className="flex flex-col gap-8">
+            {projectWorkers.map((worker) => {
+               const { totalKharchi, totalAdvance } = getDeductions(worker.id);
+               const workVal = workAmounts[worker.id] || 0;
+               const messVal = messDeductions[worker.id] || 0;
+               const netPayable = workVal - messVal - totalKharchi - totalAdvance;
+
+               return (
+                 <div key={worker.id} className="border-2 border-black p-8 page-break relative">
+                    {/* Watermark (optional) */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                       <h1 className="text-9xl font-bold -rotate-45">SN</h1>
+                    </div>
+
+                    <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-6">
+                        <div className="flex items-center gap-3">
+                             <div className="relative w-12 h-12 flex items-center justify-center bg-black rounded-lg text-white">
+                                <span className="font-['Oswald'] font-bold text-2xl">SN</span>
+                             </div>
+                             <div>
+                                 <h1 className="text-3xl font-['Oswald'] font-bold leading-none">SN ENTERPRISE</h1>
+                                 <p className="text-xs tracking-wider">Construction Management System</p>
+                             </div>
+                        </div>
+                        <div className="text-right">
+                             <h2 className="text-xl font-bold uppercase tracking-widest border-2 border-black px-3 py-1 inline-block mb-1">Salary Slip</h2>
+                             <div className="font-bold text-lg">{getFormattedMonth(selectedMonth)}</div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-6 text-sm">
+                        <div className="flex">
+                            <span className="font-bold w-24">Worker Name:</span>
+                            <span className="border-b border-dotted border-black flex-1 uppercase">{worker.name}</span>
+                        </div>
+                        <div className="flex">
+                            <span className="font-bold w-24">Worker ID:</span>
+                            <span className="border-b border-dotted border-black flex-1">{worker.workerId}</span>
+                        </div>
+                        <div className="flex">
+                            <span className="font-bold w-24">Designation:</span>
+                            <span className="border-b border-dotted border-black flex-1">{worker.designation}</span>
+                        </div>
+                        <div className="flex">
+                            <span className="font-bold w-24">Project Site:</span>
+                            <span className="border-b border-dotted border-black flex-1">{selectedProjectName}</span>
+                        </div>
+                    </div>
+
+                    <table className="w-full mb-8 border-collapse border border-black">
+                        <thead>
+                            <tr className="bg-gray-100">
+                                <th className="border border-black p-2 text-left w-2/3">Description</th>
+                                <th className="border border-black p-2 text-right">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td className="border border-black p-3 font-medium">Gross Work Amount</td>
+                                <td className="border border-black p-3 text-right font-medium">{workVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td className="border border-black p-2 text-red-700">Less: Mess Deduction</td>
+                                <td className="border border-black p-2 text-right text-red-700">-{messVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td className="border border-black p-2 text-red-700">Less: Kharchi (Pocket Money)</td>
+                                <td className="border border-black p-2 text-right text-red-700">-{totalKharchi.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td className="border border-black p-2 text-red-700">Less: Advance</td>
+                                <td className="border border-black p-2 text-right text-red-700">-{totalAdvance.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr className="bg-gray-50">
+                                <td className="border border-black p-3 font-bold text-lg uppercase">Net Payable Salary</td>
+                                <td className="border border-black p-3 text-right font-bold text-lg">{netPayable.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div className="flex justify-between items-end mt-16 px-4">
+                        <div className="text-center">
+                            <div className="border-t border-black w-40 pt-1 font-medium">Receiver's Signature</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="border-t border-black w-40 pt-1 font-medium">Authorized Signature</div>
+                            <div className="text-xs">For SN Enterprise</div>
+                        </div>
+                    </div>
+                 </div>
+               );
+            })}
           </div>
-
-          <div className="flex border border-black border-b-0">
-             <div className="flex-1 px-2 py-1 font-bold border-r border-black">Site- {selectedProjectName}</div>
-             <div className="px-2 py-1 font-bold text-right min-w-[200px]">Month- {getFormattedMonth(selectedMonth)}</div>
-          </div>
-
-          <table className="w-full text-left border-collapse border border-black text-sm">
-            <thead>
-              <tr>
-                <th className="border border-black px-2 py-2 text-center w-10">SR</th>
-                <th className="border border-black px-2 py-2 text-center">Worker Name</th>
-                <th className="border border-black px-2 py-2 text-center w-24">Total</th>
-                <th className="border border-black px-2 py-2 text-center w-24">Kharchi</th>
-                <th className="border border-black px-2 py-2 text-center w-24">Mess</th>
-                <th className="border border-black px-2 py-2 text-center w-24">Advance</th>
-                <th className="border border-black px-2 py-2 text-center w-28">Net Payment</th>
-                <th className="border border-black px-2 py-2 text-center w-40">Signature</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projectWorkers.map((worker) => {
-                const { totalKharchi, totalAdvance } = getDeductions(worker.id);
-                const workVal = workAmounts[worker.id] || 0;
-                const messVal = messDeductions[worker.id] || 0;
-                const netPayable = workVal - messVal - totalKharchi - totalAdvance;
-
-                return (
-                  <tr key={worker.id} className="h-12">
-                    <td className="border border-black px-2 py-2 text-center">{worker.serialNo}</td>
-                    <td className="border border-black px-2 py-2 text-center font-medium">{worker.name}</td>
-                    <td className="border border-black px-2 py-2 text-center font-bold">
-                       {workVal > 0 ? workVal.toLocaleString('en-IN') : ''}
-                    </td>
-                    <td className="border border-black px-2 py-2 text-center">
-                       {totalKharchi > 0 ? totalKharchi.toLocaleString('en-IN') : ''}
-                    </td>
-                    <td className="border border-black px-2 py-2 text-center">
-                       {messVal > 0 ? messVal.toLocaleString('en-IN') : ''}
-                    </td>
-                    <td className="border border-black px-2 py-2 text-center">
-                       {totalAdvance > 0 ? totalAdvance.toLocaleString('en-IN') : ''}
-                    </td>
-                    <td className="border border-black px-2 py-2 text-center font-bold">
-                       {netPayable.toLocaleString('en-IN')}
-                    </td>
-                    <td className="border border-black px-2 py-2"></td>
-                  </tr>
-                );
-              })}
-              {Array.from({ length: Math.max(0, 5 - projectWorkers.length) }).map((_, idx) => (
-                  <tr key={`empty-${idx}`} className="h-12">
-                      <td className="border border-black px-2 py-2"></td>
-                      <td className="border border-black px-2 py-2"></td>
-                      <td className="border border-black px-2 py-2"></td>
-                      <td className="border border-black px-2 py-2"></td>
-                      <td className="border border-black px-2 py-2"></td>
-                      <td className="border border-black px-2 py-2"></td>
-                      <td className="border border-black px-2 py-2"></td>
-                      <td className="border border-black px-2 py-2"></td>
-                  </tr>
-              ))}
-            </tbody>
-          </table>
+        )}
       </div>
     </div>
   );
