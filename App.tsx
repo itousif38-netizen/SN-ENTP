@@ -9,7 +9,6 @@ import KharchiTracker from './components/KharchiTracker';
 import AdvanceTracker from './components/AdvanceTracker';
 import WorkerPayment from './components/WorkerPayment';
 import ExpenseManager from './components/ExpenseManager';
-import ResourceTracker from './components/ResourceTracker';
 import PurchaseManager from './components/PurchaseManager';
 import ExecutionTracker from './components/ExecutionTracker';
 import MessManager from './components/MessManager';
@@ -19,7 +18,7 @@ import AIChat from './components/AIChat';
 import Login from './components/Login';
 import DataBackup from './components/DataBackup';
 import { AppView, Project, Worker, Bill, KharchiEntry, AdvanceEntry, ClientPayment, PurchaseEntry, ExecutionLevel, WorkerPayment as WorkerPaymentType, MessEntry } from './types';
-import { MOCK_PROJECTS, MOCK_RESOURCES, MOCK_WORKERS, MOCK_BILLS, MOCK_KHARCHI, MOCK_ADVANCES, MOCK_CLIENT_PAYMENTS, MOCK_PURCHASES, MOCK_EXECUTION, MOCK_MESS_ENTRIES } from './constants';
+import { MOCK_PROJECTS, MOCK_WORKERS, MOCK_BILLS, MOCK_KHARCHI, MOCK_ADVANCES, MOCK_CLIENT_PAYMENTS, MOCK_PURCHASES, MOCK_EXECUTION, MOCK_MESS_ENTRIES } from './constants';
 
 // Custom Hook for Local Storage Persistence
 function usePersistentState<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -51,7 +50,7 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // State for data management - NOW PERSISTENT
+  // State for data management - PERSISTENT
   const [projects, setProjects] = usePersistentState<Project[]>('sn_projects', MOCK_PROJECTS);
   const [workers, setWorkers] = usePersistentState<Worker[]>('sn_workers', MOCK_WORKERS);
   const [bills, setBills] = usePersistentState<Bill[]>('sn_bills', MOCK_BILLS);
@@ -162,4 +161,218 @@ function App() {
     setMessEntries(prev => prev.filter(m => m.id !== id));
   };
 
-  const handleUpdateKharchi = (entries
+  // --- Bulk Update Handlers ---
+  const handleUpdateKharchi = (entries: KharchiEntry[]) => {
+    // Merge new entries with existing ones (update if exists, add if new)
+    setKharchi(prev => {
+        const otherEntries = prev.filter(p => !entries.some(e => e.id === p.id));
+        return [...otherEntries, ...entries];
+    });
+  };
+
+  const handleSaveWorkerPayments = (records: WorkerPaymentType[]) => {
+    setWorkerPayments(prev => {
+        // Remove existing records for the same month/worker to prevent duplicates
+        const filtered = prev.filter(p => !records.some(r => r.workerId === p.workerId && r.month === p.month));
+        return [...filtered, ...records];
+    });
+  };
+
+  const handleRestoreData = (data: any) => {
+    if (data.projects) setProjects(data.projects);
+    if (data.workers) setWorkers(data.workers);
+    if (data.bills) setBills(data.bills);
+    if (data.clientPayments) setClientPayments(data.clientPayments);
+    if (data.kharchi) setKharchi(data.kharchi);
+    if (data.advances) setAdvances(data.advances);
+    if (data.purchases) setPurchases(data.purchases);
+    if (data.executionData) setExecutionData(data.executionData);
+    if (data.messEntries) setMessEntries(data.messEntries);
+    if (data.workerPayments) setWorkerPayments(data.workerPayments);
+  };
+
+  const handleLogin = (success: boolean) => {
+    if (success) setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentView(AppView.DASHBOARD);
+  };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  const renderView = () => {
+    switch (currentView) {
+      case AppView.DASHBOARD:
+        return <Dashboard projects={projects} />;
+      case AppView.PROJECTS:
+        return (
+          <ProjectList 
+            projects={projects} 
+            onAddProject={handleAddProject} 
+            onEditProject={handleEditProject}
+            onDeleteProject={handleDeleteProject}
+          />
+        );
+      case AppView.WORKERS:
+        return (
+          <WorkerManager 
+            workers={workers} 
+            projects={projects} 
+            onAddWorker={handleAddWorker}
+            onEditWorker={handleEditWorker}
+            onDeleteWorker={handleDeleteWorker}
+          />
+        );
+      case AppView.BILLING:
+        return (
+          <BillingManager 
+            projects={projects} 
+            bills={bills} 
+            clientPayments={clientPayments}
+            onAddBill={handleAddBill} 
+            onEditBill={handleEditBill}
+            onDeleteBill={handleDeleteBill}
+            onAddPayment={handleAddClientPayment}
+            onEditPayment={handleEditClientPayment}
+            onDeletePayment={handleDeleteClientPayment}
+          />
+        );
+      case AppView.KHARCHI:
+        return (
+          <KharchiTracker 
+            projects={projects} 
+            workers={workers} 
+            kharchi={kharchi} 
+            onUpdateKharchi={handleUpdateKharchi} 
+          />
+        );
+      case AppView.ADVANCE:
+        return (
+          <AdvanceTracker 
+            projects={projects} 
+            workers={workers} 
+            advances={advances}
+            onAddAdvance={handleAddAdvance}
+            onEditAdvance={handleEditAdvance}
+            onDeleteAdvance={handleDeleteAdvance}
+          />
+        );
+      case AppView.WORKER_PAYMENT:
+        return (
+          <WorkerPayment 
+            projects={projects} 
+            workers={workers} 
+            kharchi={kharchi} 
+            advances={advances}
+            onSavePaymentRecord={handleSaveWorkerPayments}
+          />
+        );
+      case AppView.EXPENSES:
+        return (
+          <ExpenseManager 
+            projects={projects}
+            purchases={purchases}
+            kharchi={kharchi}
+            advances={advances}
+            clientPayments={clientPayments}
+            workerPayments={workerPayments}
+            messEntries={messEntries}
+            bills={bills}
+          />
+        );
+      case AppView.PURCHASE:
+        return (
+          <PurchaseManager 
+            projects={projects}
+            purchases={purchases}
+            onAddPurchase={handleAddPurchase}
+            onEditPurchase={handleEditPurchase}
+            onDeletePurchase={handleDeletePurchase}
+          />
+        );
+      case AppView.EXECUTION:
+        return (
+          <ExecutionTracker 
+            projects={projects}
+            executionData={executionData}
+            onAddExecution={handleAddExecution}
+            onUpdateExecution={handleUpdateExecution}
+            onDeleteExecution={handleDeleteExecution}
+          />
+        );
+      case AppView.MESS:
+        return (
+          <MessManager 
+            projects={projects}
+            messEntries={messEntries}
+            onAddMess={handleAddMess}
+            onEditMess={handleEditMess}
+            onDeleteMess={handleDeleteMess}
+          />
+        );
+      case AppView.GST:
+        return (
+          <GSTDashboard 
+            projects={projects}
+            bills={bills}
+          />
+        );
+      case AppView.ESTIMATOR:
+        return <AIEstimator />;
+      case AppView.ASSISTANT:
+        return <AIChat />;
+      case AppView.BACKUP:
+        return (
+          <DataBackup 
+            currentData={{
+              projects, workers, bills, clientPayments, kharchi, advances, purchases, executionData, messEntries, workerPayments
+            }}
+            onRestore={handleRestoreData}
+          />
+        );
+      default:
+        return <Dashboard projects={projects} />;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-['Inter']">
+      <Sidebar 
+        currentView={currentView} 
+        onChangeView={setCurrentView} 
+        isMobileOpen={isMobileMenuOpen}
+        setIsMobileOpen={setIsMobileMenuOpen}
+        onLogout={handleLogout}
+      />
+
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+        {/* Mobile Header */}
+        <header className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between z-10">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="text-slate-600 hover:text-slate-900"
+          >
+            <Menu size={24} />
+          </button>
+          <div className="text-xl font-['Oswald'] font-black tracking-wide text-slate-900">
+             SN <span className="text-orange-600">ENTERPRISE</span>
+          </div>
+          <div className="w-6"></div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8 animate-fade-in-up">
+          <div className="max-w-7xl mx-auto pb-10">
+            {renderView()}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default App;
