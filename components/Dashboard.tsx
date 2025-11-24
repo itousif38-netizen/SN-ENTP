@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Project, ProjectStatus } from '../types';
-import { IndianRupee, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { IndianRupee, AlertCircle, CheckCircle2, Clock, CloudSun, Wind, Droplets } from 'lucide-react';
 
 interface DashboardProps {
   projects: Project[];
@@ -40,12 +41,49 @@ const Dashboard: React.FC<DashboardProps> = ({ projects }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end animate-slide-in-right">
+      {/* Welcome Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 rounded-2xl shadow-xl text-white animate-fade-in-up relative overflow-hidden border border-slate-700">
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
+                  <h1 className="text-4xl font-['Oswald'] font-bold tracking-wide mb-2 text-white">
+                    Welcome, <span className="text-orange-500">Tousif Reja</span>
+                  </h1>
+                  <p className="text-slate-300">Here is your daily construction overview and site updates.</p>
+              </div>
+              <div className="hidden md:flex items-center gap-4 bg-slate-800/50 p-2 pr-6 rounded-full border border-slate-700 backdrop-blur-sm">
+                  <div className="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center font-bold font-['Oswald'] text-lg shadow-lg">TR</div>
+                  <div className="text-sm">
+                      <div className="font-bold text-white leading-none">Administrator</div>
+                      <div className="text-xs text-slate-400">SN Enterprise</div>
+                  </div>
+              </div>
+          </div>
+          {/* Decorative Background */}
+          <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-orange-600/10 to-transparent pointer-events-none"></div>
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between items-end animate-slide-in-right gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard Overview</h1>
-          <p className="text-slate-500">Welcome back, here's what's happening on your sites today.</p>
+          <h2 className="text-xl font-bold text-slate-900">Project Statistics</h2>
+          <p className="text-slate-500">Real-time metrics from your active sites.</p>
         </div>
-        <span className="text-sm text-slate-400">Last updated: Just now</span>
+        
+        {/* Weather Widget (Mock Data for UI Visualization) */}
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-xl shadow-lg flex items-center gap-4 animate-scale-in">
+            <div className="p-2 bg-white/20 rounded-full">
+                <CloudSun size={24} className="text-yellow-300" />
+            </div>
+            <div>
+                <div className="text-xs font-medium opacity-90">Site Conditions</div>
+                <div className="font-bold text-lg">32°C <span className="text-xs font-normal opacity-80">Sunny</span></div>
+            </div>
+            <div className="h-8 w-px bg-white/20 mx-1"></div>
+            <div className="flex flex-col text-xs gap-1">
+                <div className="flex items-center gap-1"><Wind size={12} /> 12 km/h</div>
+                <div className="flex items-center gap-1"><Droplets size={12} /> 45% Hum</div>
+            </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

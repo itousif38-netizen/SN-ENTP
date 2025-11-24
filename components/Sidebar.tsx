@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database, LogOut } from 'lucide-react';
 import { AppView } from '../types';
@@ -64,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOp
                 </svg>
             </div>
             <div className="leading-none">
-                <span className="block font-['Oswald'] font-bold text-2xl tracking-wide text-white">SN</span>
+                <span className="block font-['Oswald'] font-bold text-5xl tracking-wide text-white">SN</span>
                 <span className="block font-['Oswald'] text-sm font-bold text-orange-500 tracking-widest">ENTERPRISE</span>
             </div>
           </div>
@@ -104,11 +105,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOp
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-orange-500 font-bold border border-slate-600 font-['Oswald']">
-                SN
+                TR
               </div>
               <div>
-                <p className="text-sm font-medium text-white">SN Admin</p>
-                <p className="text-xs text-slate-500">Manager</p>
+                <p className="text-sm font-medium text-white">Tousif Reja</p>
+                <p className="text-xs text-slate-500">Managing Director</p>
               </div>
             </div>
             <button 

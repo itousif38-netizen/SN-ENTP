@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Project, ProjectStatus } from '../types';
-import { MapPin, Calendar, IndianRupee, Search, Plus, Flag, Pencil, Trash2, Percent } from 'lucide-react';
+import { MapPin, Calendar, IndianRupee, Search, Plus, Flag, Pencil, Trash2, Percent, FileSpreadsheet } from 'lucide-react';
 
 interface ProjectListProps {
   projects: Project[];
@@ -49,6 +49,35 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
       onDeleteProject(id);
     }
+  };
+
+  const handleExportCSV = () => {
+    // Define headers
+    const headers = ['Project Name', 'Address', 'Start Date', 'Completion Date', 'Budget (INR)', 'Status', 'Completion %'];
+    
+    // Map data
+    const csvContent = [
+      headers.join(','),
+      ...projects.map(p => [
+        `"${p.name}"`, // Quote strings to handle commas inside content
+        `"${p.address}"`,
+        p.startDate,
+        p.completionDate || '',
+        p.budget,
+        p.status,
+        p.completionPercentage || 0
+      ].join(','))
+    ].join('\n');
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `SN_Projects_List_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const resetForm = () => {
@@ -110,21 +139,31 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
           <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
           <p className="text-slate-500">1. Projects: Manage active sites, budgets and completion status.</p>
         </div>
-        <button 
-          onClick={() => {
-            if(isFormOpen) {
-                resetForm();
-            } else {
-                setIsFormOpen(true);
-                setEditingId(null);
-                setFormData({ status: ProjectStatus.PLANNING, budget: 0, name: '', address: '', startDate: '', completionDate: '', completionPercentage: 0 });
-            }
-          }}
-          className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
-        >
-          <Plus size={18} className={`transition-transform duration-300 ${isFormOpen ? "rotate-45" : ""}`} />
-          {isFormOpen ? 'Cancel' : 'New Project'}
-        </button>
+        <div className="flex gap-2">
+            <button 
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition-colors shadow-sm"
+                title="Download as Excel/CSV"
+            >
+                <FileSpreadsheet size={18} />
+                <span className="hidden md:inline">Export CSV</span>
+            </button>
+            <button 
+            onClick={() => {
+                if(isFormOpen) {
+                    resetForm();
+                } else {
+                    setIsFormOpen(true);
+                    setEditingId(null);
+                    setFormData({ status: ProjectStatus.PLANNING, budget: 0, name: '', address: '', startDate: '', completionDate: '', completionPercentage: 0 });
+                }
+            }}
+            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
+            >
+            <Plus size={18} className={`transition-transform duration-300 ${isFormOpen ? "rotate-45" : ""}`} />
+            {isFormOpen ? 'Cancel' : 'New Project'}
+            </button>
+        </div>
       </div>
 
       {isFormOpen && (
