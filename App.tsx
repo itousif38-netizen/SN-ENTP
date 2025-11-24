@@ -46,6 +46,7 @@ function usePersistentState<T>(key: string, initialValue: T): [T, React.Dispatch
 function App() {
   // Auth State (Session based, resets on refresh which is fine for security)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [logoutNotification, setLogoutNotification] = useState<string | null>(null);
 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -198,10 +199,12 @@ function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentView(AppView.DASHBOARD);
+    setLogoutNotification("Logged out successfully");
+    setTimeout(() => setLogoutNotification(null), 3000);
   };
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} notification={logoutNotification} />;
   }
 
   const renderView = () => {

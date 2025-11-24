@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Lock, User, ArrowRight, ShieldCheck, CreditCard, BadgeCheck, ArrowLeft } from 'lucide-react';
+import { Lock, User, ArrowRight, ShieldCheck, CreditCard, BadgeCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (success: boolean) => void;
+  notification?: string | null;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, notification }) => {
   const [view, setView] = useState<'login' | 'recovery'>('login');
   
   // Login State
@@ -71,6 +72,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-600 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{animationDuration: '3s'}}></div>
          <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-600 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2 animate-pulse" style={{animationDuration: '4s', animationDelay: '1s'}}></div>
       </div>
+
+      {/* Logout Notification Toast */}
+      {notification && (
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
+           <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 border-2 border-green-400">
+               <CheckCircle2 size={24} className="text-white" />
+               <span className="font-bold text-lg">{notification}</span>
+           </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 animate-fade-in-up duration-500">
         {/* Header / Logo Area */}
