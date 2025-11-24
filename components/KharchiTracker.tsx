@@ -53,22 +53,32 @@ const KharchiTracker: React.FC<KharchiTrackerProps> = ({ projects, workers, khar
 
   const handleSave = () => {
     const newEntries: KharchiEntry[] = [];
-    Object.entries(inputValues).forEach(([key, val]) => {
-      const amount = Number(val);
-      const [workerId, date] = key.split('-');
-      if (amount > 0) {
-        newEntries.push({
-          id: key, 
-          workerId,
-          projectId: selectedProjectId,
-          date,
-          amount
+    
+    // Fix: Iterate structurally through the current view's workers and sundays.
+    // This ensures we reconstruct the exact Date string and Worker ID without 
+    // relying on error-prone string splitting of the key.
+    if (!selectedProjectId) return;
+
+    projectWorkers.forEach(worker => {
+        sundays.forEach(sunday => {
+            const key = `${worker.id}-${sunday}`;
+            const val = inputValues[key];
+            
+            // Check if user has entered/modified a value (val could be 0 which is valid)
+            if (val !== undefined) {
+                 newEntries.push({
+                    id: key, 
+                    workerId: worker.id,
+                    projectId: selectedProjectId,
+                    date: sunday, // Use the actual date string (YYYY-MM-DD)
+                    amount: Number(val)
+                });
+            }
         });
-      }
     });
     
     onUpdateKharchi(newEntries);
-    alert("Kharchi records updated!");
+    alert("Kharchi records updated successfully!");
   };
 
   const handleExportPDF = () => {
