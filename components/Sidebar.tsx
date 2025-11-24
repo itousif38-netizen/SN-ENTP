@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database, LogOut } from 'lucide-react';
 import { AppView } from '../types';
 
 interface SidebarProps {
@@ -7,9 +7,10 @@ interface SidebarProps {
   onChangeView: (view: AppView) => void;
   isMobileOpen: boolean;
   setIsMobileOpen: (isOpen: boolean) => void;
+  onLogout: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOpen, setIsMobileOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOpen, setIsMobileOpen, onLogout }) => {
   const menuItems = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
     { id: AppView.PROJECTS, label: 'Projects', icon: HardHat },
@@ -94,14 +95,23 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOp
 
         {/* User Profile / Footer */}
         <div className="p-4 border-t border-slate-800 bg-slate-950">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-orange-500 font-bold border border-slate-600 font-['Oswald']">
-              SN
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-orange-500 font-bold border border-slate-600 font-['Oswald']">
+                SN
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">SN Admin</p>
+                <p className="text-xs text-slate-500">Manager</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-white">SN Admin</p>
-              <p className="text-xs text-slate-500">Manager</p>
-            </div>
+            <button 
+              onClick={onLogout}
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         </div>
       </div>

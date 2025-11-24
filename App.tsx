@@ -203,6 +203,10 @@ function App() {
      alert('Data restored successfully!');
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case AppView.DASHBOARD:
@@ -339,6 +343,7 @@ function App() {
         onChangeView={setCurrentView} 
         isMobileOpen={isMobileMenuOpen}
         setIsMobileOpen={setIsMobileMenuOpen}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
