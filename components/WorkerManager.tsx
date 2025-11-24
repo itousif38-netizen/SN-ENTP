@@ -13,6 +13,7 @@ interface WorkerManagerProps {
 
 const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddWorker, onEditWorker, onDeleteWorker }) => {
   const [selectedProject, setSelectedProject] = useState<string>('All');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -26,9 +27,12 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
     exitDate: ''
   });
 
-  const filteredWorkers = workers.filter(w => 
-    selectedProject === 'All' || w.projectId === selectedProject
-  );
+  const filteredWorkers = workers.filter(w => {
+    const matchesProject = selectedProject === 'All' || w.projectId === selectedProject;
+    const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          w.workerId.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesProject && matchesSearch;
+  });
 
   const workerCounts = projects.reduce((acc, project) => {
     acc[project.id] = workers.filter(w => w.projectId === project.id).length;
@@ -116,7 +120,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
 
       {/* Add/Edit Form */}
       {isFormOpen && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-top-2">
            <h3 className="font-semibold mb-4">{editingId ? 'Edit Worker Details' : 'Register New Worker'}</h3>
            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -162,21 +166,34 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Toolbar */}
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-slate-500" />
-            <select 
-              className="border-none bg-slate-100 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-orange-500"
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-            >
-              <option value="All">All Sites ({workers.length} Workers)</option>
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({workerCounts[p.id] || 0})</option>
-              ))}
-            </select>
+          <div className="flex flex-col sm:flex-row gap-4 items-center w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+                <Filter size={18} className="text-slate-500" />
+                <select 
+                className="border-none bg-slate-100 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-orange-500 min-w-[200px]"
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                >
+                <option value="All">All Sites ({workers.length})</option>
+                {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({workerCounts[p.id] || 0})</option>
+                ))}
+                </select>
+            </div>
+
+            <div className="relative w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input 
+                    type="text" 
+                    placeholder="Search by Name or ID..." 
+                    className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
           </div>
           
-          <div className="text-sm text-slate-500">
+          <div className="text-sm text-slate-500 whitespace-nowrap">
              Showing {filteredWorkers.length} workers
           </div>
         </div>
@@ -236,6 +253,13 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
                   </td>
                 </tr>
               ))}
+              {filteredWorkers.length === 0 && (
+                  <tr>
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
+                          No workers found matching your search.
+                      </td>
+                  </tr>
+              )}
             </tbody>
           </table>
         </div>
