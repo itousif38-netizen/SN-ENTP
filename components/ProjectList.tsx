@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Project, ProjectStatus } from '../types';
-import { MapPin, Calendar, IndianRupee, Search, Plus, Flag, Pencil, Trash2, Percent, FileSpreadsheet } from 'lucide-react';
+import { MapPin, Calendar, IndianRupee, Search, Plus, Flag, Pencil, Trash2, Percent, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface ProjectListProps {
   projects: Project[];
@@ -9,10 +10,18 @@ interface ProjectListProps {
   onDeleteProject: (id: string) => void;
 }
 
+type SortKey = 'name' | 'startDate' | 'completionDate' | 'budget' | 'completionPercentage';
+
 const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEditProject, onDeleteProject }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Sorting State
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
+    key: 'startDate',
+    direction: 'desc' // Default to newest projects first
+  });
 
   const [formData, setFormData] = useState<Partial<Project>>({
     status: ProjectStatus.PLANNING,
@@ -24,10 +33,29 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     completionPercentage: 0
   });
 
+  // 1. Filter
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // 2. Sort
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    // Handle null/undefined for completionDate
+    if (aValue === undefined || aValue === null) return 1;
+    if (bValue === undefined || bValue === null) return -1;
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
 
   const handleEditClick = (project: Project) => {
     setEditingId(project.id);
@@ -58,7 +86,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     // Map data
     const csvContent = [
       headers.join(','),
-      ...projects.map(p => [
+      ...sortedProjects.map(p => [
         `"${p.name}"`, // Quote strings to handle commas inside content
         `"${p.address}"`,
         p.startDate,
@@ -130,6 +158,13 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
       }
       resetForm();
     }
+  };
+
+  const toggleSortDirection = () => {
+    setSortConfig(prev => ({
+      ...prev,
+      direction: prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
   };
 
   return (
@@ -242,9 +277,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
         </form>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <div className="relative flex-1">
+      {/* Filters & Sorting */}
+      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 items-center">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input 
             type="text"
@@ -254,15 +289,39 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            <span className="text-sm text-slate-500 whitespace-nowrap hidden md:inline">Sort by:</span>
+            <select 
+              className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none cursor-pointer"
+              value={sortConfig.key}
+              onChange={(e) => setSortConfig(prev => ({ ...prev, key: e.target.value as SortKey }))}
+            >
+              <option value="name">Name</option>
+              <option value="startDate">Start Date</option>
+              <option value="completionDate">Completion Date</option>
+              <option value="budget">Budget</option>
+              <option value="completionPercentage">Progress</option>
+            </select>
+            <button 
+              onClick={toggleSortDirection}
+              className="ml-1 p-1 hover:bg-slate-200 rounded transition-colors text-slate-600"
+              title={sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              {sortConfig.direction === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredProjects.map((project, index) => (
+        {sortedProjects.map((project, index) => (
           <div 
             key={project.id} 
             className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col animate-fade-in-up"
-            style={{ animationDelay: `${index * 100}ms` }}
+            style={{ animationDelay: `${index * 50}ms` }}
           >
             <div className="p-6 flex-1">
               <div className="flex justify-between items-start mb-4">
@@ -329,7 +388,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
           </div>
         ))}
         
-        {filteredProjects.length === 0 && (
+        {sortedProjects.length === 0 && (
           <div className="col-span-full text-center py-12 animate-fade-in-up">
             <p className="text-slate-500">No projects found.</p>
           </div>
