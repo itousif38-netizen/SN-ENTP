@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Project, Worker } from '../types';
 import { Users, Search, Filter, Plus, UserPlus, Pencil, Trash2 } from 'lucide-react';
 
@@ -26,6 +26,24 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
     joiningDate: new Date().toISOString().split('T')[0],
     exitDate: ''
   });
+
+  // Auto-generate ID when Project Changes
+  useEffect(() => {
+    if (!editingId && formData.projectId) {
+        const project = projects.find(p => p.id === formData.projectId);
+        if (project && project.projectCode) {
+            // Count existing workers for this project to determine sequence
+            const existingCount = workers.filter(w => w.projectId === formData.projectId).length;
+            const nextSeq = (existingCount + 1).toString().padStart(3, '0');
+            
+            // Format: SNE/CODE-001
+            // Note: projectCode usually comes as "SNE/S3", so we just append the number
+            // If projectCode doesn't have slash, we might want to add it, but user asked for specific format based on project code
+            const autoId = `${project.projectCode}-${nextSeq}`;
+            setFormData(prev => ({ ...prev, workerId: autoId }));
+        }
+    }
+  }, [formData.projectId, editingId, projects, workers]);
 
   const filteredWorkers = workers.filter(w => {
     const matchesProject = selectedProject === 'All' || w.projectId === selectedProject;
@@ -124,23 +142,30 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
            <h3 className="font-semibold mb-4">{editingId ? 'Edit Worker Details' : 'Register New Worker'}</h3>
            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">SR No</label>
-                <input type="number" className="w-full border p-2 rounded" value={formData.serialNo} onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} required />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Worker ID</label>
-                <input type="text" className="w-full border p-2 rounded" value={formData.workerId} onChange={e => setFormData({...formData, workerId: e.target.value})} required />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
-                <input type="text" className="w-full border p-2 rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
-              </div>
-              <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Project Site</label>
                 <select className="w-full border p-2 rounded" value={formData.projectId} onChange={e => setFormData({...formData, projectId: e.target.value})} required>
                   <option value="">Select Project</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Worker ID (Auto-Generated)</label>
+                <input 
+                    type="text" 
+                    className="w-full border p-2 rounded bg-slate-50 font-mono text-slate-700" 
+                    value={formData.workerId} 
+                    onChange={e => setFormData({...formData, workerId: e.target.value})} 
+                    placeholder="Select Project first"
+                    required 
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">SR No</label>
+                <input type="number" className="w-full border p-2 rounded" value={formData.serialNo} onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} required />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
+                <input type="text" className="w-full border p-2 rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Designation</label>

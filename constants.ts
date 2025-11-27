@@ -6,6 +6,7 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: '1',
     name: 'Sunset Heights Complex',
+    projectCode: 'SNE/SHC',
     startDate: '2023-01-15',
     completionDate: '2024-06-30',
     address: '1240 Sunset Blvd',
@@ -18,6 +19,7 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: '2',
     name: 'Downtown Office Reno',
+    projectCode: 'SNE/DOR',
     startDate: '2023-06-01',
     completionDate: '2023-12-15',
     address: '445 Main St',
@@ -30,6 +32,7 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: '3',
     name: 'Riverside Luxury Homes',
+    projectCode: 'SNE/RLH',
     startDate: '2023-03-10',
     completionDate: '2024-08-20',
     address: '88 River Rd',

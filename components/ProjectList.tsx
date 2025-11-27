@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Project, ProjectStatus } from '../types';
 import { MapPin, Calendar, IndianRupee, Search, Plus, Flag, Pencil, Trash2, Percent, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -27,6 +28,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     status: ProjectStatus.PLANNING,
     budget: 0,
     name: '',
+    projectCode: '',
     address: '',
     startDate: '',
     completionDate: '',
@@ -61,6 +63,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     setEditingId(project.id);
     setFormData({
       name: project.name,
+      projectCode: project.projectCode || '',
       address: project.address,
       startDate: project.startDate,
       completionDate: project.completionDate,
@@ -81,13 +84,14 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
 
   const handleExportCSV = () => {
     // Define headers
-    const headers = ['Project Name', 'Address', 'Start Date', 'Completion Date', 'Budget (INR)', 'Status', 'Completion %'];
+    const headers = ['Project Name', 'Project Code', 'Address', 'Start Date', 'Completion Date', 'Budget (INR)', 'Status', 'Completion %'];
     
     // Map data
     const csvContent = [
       headers.join(','),
       ...sortedProjects.map(p => [
         `"${p.name}"`, // Quote strings to handle commas inside content
+        `"${p.projectCode || ''}"`,
         `"${p.address}"`,
         p.startDate,
         p.completionDate || '',
@@ -115,6 +119,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
       status: ProjectStatus.PLANNING, 
       budget: 0, 
       name: '', 
+      projectCode: '',
       address: '', 
       startDate: '', 
       completionDate: '',
@@ -130,6 +135,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
         const updatedProject: Project = {
             id: editingId,
             name: formData.name!,
+            projectCode: formData.projectCode || '',
             startDate: formData.startDate || '',
             completionDate: formData.completionDate || '',
             address: formData.address || '',
@@ -146,6 +152,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
         onAddProject({
           id: Date.now().toString(),
           name: formData.name || '',
+          projectCode: formData.projectCode || '',
           startDate: formData.startDate || new Date().toISOString().split('T')[0],
           completionDate: formData.completionDate || '',
           address: formData.address || '',
@@ -190,7 +197,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
                 } else {
                     setIsFormOpen(true);
                     setEditingId(null);
-                    setFormData({ status: ProjectStatus.PLANNING, budget: 0, name: '', address: '', startDate: '', completionDate: '', completionPercentage: 0 });
+                    setFormData({ status: ProjectStatus.PLANNING, budget: 0, name: '', projectCode: '', address: '', startDate: '', completionDate: '', completionPercentage: 0 });
                 }
             }}
             className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
@@ -208,7 +215,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
             <button type="button" onClick={resetForm} className="text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="md:col-span-2 lg:col-span-1">
+            <div className="md:col-span-1 lg:col-span-1">
               <label className="block text-sm font-medium text-slate-700 mb-1">Project Name</label>
               <input 
                 required
@@ -216,6 +223,16 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
                 className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
                 value={formData.name}
                 onChange={e => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+            <div className="md:col-span-1 lg:col-span-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Project Code</label>
+              <input 
+                type="text"
+                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                placeholder="e.g. SNE/P1"
+                value={formData.projectCode}
+                onChange={e => setFormData({...formData, projectCode: e.target.value})}
               />
             </div>
             <div className="md:col-span-2 lg:col-span-2">
@@ -347,7 +364,8 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
               </div>
 
               <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">{project.name}</h3>
-              <p className="text-sm text-slate-500 mb-4 flex items-center gap-1">
+              {project.projectCode && <span className="text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{project.projectCode}</span>}
+              <p className="text-sm text-slate-500 mb-4 flex items-center gap-1 mt-2">
                 <MapPin size={14} />
                 {project.address}
               </p>

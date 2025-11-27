@@ -10,6 +10,7 @@ export enum ProjectStatus {
 export interface Project {
   id: string;
   name: string;
+  projectCode?: string; // Added for custom worker ID generation
   startDate: string;
   completionDate?: string;
   address: string;
