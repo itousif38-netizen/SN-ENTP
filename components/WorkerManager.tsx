@@ -144,7 +144,20 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Designation</label>
-                <input type="text" className="w-full border p-2 rounded" value={formData.designation} onChange={e => setFormData({...formData, designation: e.target.value})} required />
+                <select 
+                  className="w-full border p-2 rounded" 
+                  value={formData.designation} 
+                  onChange={e => setFormData({...formData, designation: e.target.value})} 
+                  required
+                >
+                  <option value="">Select Designation</option>
+                  <option value="Sr. Carpenter">Sr. Carpenter</option>
+                  <option value="Carpenter">Carpenter</option>
+                  <option value="Helper">Helper</option>
+                  <option value="Fitter">Fitter</option>
+                  <option value="Rigger">Rigger</option>
+                  <option value="Mason">Mason</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Joining Date</label>
