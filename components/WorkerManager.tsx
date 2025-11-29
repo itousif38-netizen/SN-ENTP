@@ -31,15 +31,23 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
   useEffect(() => {
     if (!editingId && formData.projectId) {
         const project = projects.find(p => p.id === formData.projectId);
-        if (project && project.projectCode) {
+        if (project) {
             // Count existing workers for this project to determine sequence
             const existingCount = workers.filter(w => w.projectId === formData.projectId).length;
             const nextSeq = (existingCount + 1).toString().padStart(3, '0');
             
-            // Format: SNE/CODE-001
-            // Note: projectCode usually comes as "SNE/S3", so we just append the number
-            // If projectCode doesn't have slash, we might want to add it, but user asked for specific format based on project code
-            const autoId = `${project.projectCode}-${nextSeq}`;
+            let baseCode = project.projectCode || '';
+            
+            // Logic to ensure SNE/ prefix format: SNE/ProjectCode-SeqNumber
+            if (!baseCode) {
+                 // Fallback: Use initials if no code provided
+                 const initials = project.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 3);
+                 baseCode = `SNE/${initials}`;
+            } else if (!baseCode.toUpperCase().startsWith('SNE/')) {
+                 baseCode = `SNE/${baseCode}`;
+            }
+            
+            const autoId = `${baseCode}-${nextSeq}`;
             setFormData(prev => ({ ...prev, workerId: autoId }));
         }
     }
