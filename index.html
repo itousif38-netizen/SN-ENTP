@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SN Enterprises</title>
+    <title>SN Enterprise</title>
+    <meta name="description" content="Construction Management System for SN Enterprise">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f172a">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <style>
@@ -81,6 +84,13 @@
       /* Table Row Hover Animation */
       tr.hover-row {
         transition: background-color 0.2s ease, transform 0.1s ease;
+      }
+
+      @media print {
+         body, html {
+            height: auto !important;
+            overflow: visible !important;
+         }
       }
     </style>
   <script type="importmap">
