@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database, LogOut, Smartphone } from 'lucide-react';
 import { AppView } from '../types';
 
 interface SidebarProps {
@@ -9,9 +8,19 @@ interface SidebarProps {
   isMobileOpen: boolean;
   setIsMobileOpen: (isOpen: boolean) => void;
   onLogout: () => void;
+  showInstallButton?: boolean;
+  onInstallClick?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOpen, setIsMobileOpen, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  currentView, 
+  onChangeView, 
+  isMobileOpen, 
+  setIsMobileOpen, 
+  onLogout,
+  showInstallButton,
+  onInstallClick
+}) => {
   const menuItems = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
     { id: AppView.PROJECTS, label: 'Projects', icon: HardHat },
@@ -101,7 +110,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isMobileOp
         </nav>
 
         {/* User Profile / Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950">
+        <div className="p-4 border-t border-slate-800 bg-slate-950 space-y-3">
+          {showInstallButton && onInstallClick && (
+            <button
+              onClick={onInstallClick}
+              className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-blue-600 text-white py-2 rounded-lg transition-colors text-sm font-medium border border-slate-700 hover:border-blue-500"
+            >
+               <Smartphone size={16} /> Install App
+            </button>
+          )}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-orange-500 font-bold border border-slate-600 font-['Oswald']">

@@ -51,6 +51,34 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    // We've used the prompt, and can't use it again, throw it away
+    setDeferredPrompt(null);
+  };
+
   // State for data management - PERSISTENT
   const [projects, setProjects] = usePersistentState<Project[]>('sn_projects', MOCK_PROJECTS);
   const [workers, setWorkers] = usePersistentState<Worker[]>('sn_workers', MOCK_WORKERS);
@@ -350,6 +378,8 @@ function App() {
         isMobileOpen={isMobileMenuOpen}
         setIsMobileOpen={setIsMobileMenuOpen}
         onLogout={handleLogout}
+        showInstallButton={!!deferredPrompt}
+        onInstallClick={handleInstallClick}
       />
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
