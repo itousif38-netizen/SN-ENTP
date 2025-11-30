@@ -17,6 +17,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Sorting State
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
@@ -61,6 +62,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
 
   const handleEditClick = (project: Project) => {
     setEditingId(project.id);
+    setErrors({});
     setFormData({
       name: project.name,
       projectCode: project.projectCode || '',
@@ -115,6 +117,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
   const resetForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
+    setErrors({});
     setFormData({ 
       status: ProjectStatus.PLANNING, 
       budget: 0, 
@@ -127,8 +130,29 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     });
   };
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name?.trim()) newErrors.name = "Project Name is required.";
+    if (!formData.address?.trim()) newErrors.address = "Address is required.";
+    if (!formData.startDate) newErrors.startDate = "Start Date is required.";
+    if (!formData.budget || Number(formData.budget) <= 0) newErrors.budget = "Budget must be a positive number.";
+    const pct = Number(formData.completionPercentage);
+    if (pct < 0 || pct > 100) newErrors.completionPercentage = "Percentage must be between 0 and 100.";
+    
+    if (formData.startDate && formData.completionDate) {
+        if (new Date(formData.completionDate) < new Date(formData.startDate)) {
+            newErrors.completionDate = "Completion Date cannot be before Start Date.";
+        }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     if (formData.name && formData.budget) {
       if (editingId) {
         // Update existing
@@ -197,6 +221,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
                 } else {
                     setIsFormOpen(true);
                     setEditingId(null);
+                    setErrors({});
                     setFormData({ status: ProjectStatus.PLANNING, budget: 0, name: '', projectCode: '', address: '', startDate: '', completionDate: '', completionPercentage: 0 });
                 }
             }}
@@ -216,14 +241,14 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="md:col-span-1 lg:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Project Name</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Project Name *</label>
               <input 
-                required
                 type="text"
-                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 transition-all ${errors.name ? 'border-red-500' : 'border-slate-300'}`}
                 value={formData.name}
                 onChange={e => setFormData({...formData, name: e.target.value})}
               />
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
             <div className="md:col-span-1 lg:col-span-1">
               <label className="block text-sm font-medium text-slate-700 mb-1">Project Code</label>
@@ -236,33 +261,34 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
               />
             </div>
             <div className="md:col-span-2 lg:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Address *</label>
               <textarea 
-                required
-                className="w-full p-2 border border-slate-300 rounded-lg resize-y focus:ring-2 focus:ring-orange-500 transition-all"
+                className={`w-full p-2 border rounded-lg resize-y focus:ring-2 focus:ring-orange-500 transition-all ${errors.address ? 'border-red-500' : 'border-slate-300'}`}
                 rows={3}
                 value={formData.address}
                 onChange={e => setFormData({...formData, address: e.target.value})}
               />
+              {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date *</label>
               <input 
-                required
                 type="date"
-                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 transition-all ${errors.startDate ? 'border-red-500' : 'border-slate-300'}`}
                 value={formData.startDate}
                 onChange={e => setFormData({...formData, startDate: e.target.value})}
               />
+              {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Completion Date</label>
               <input 
                 type="date"
-                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 transition-all ${errors.completionDate ? 'border-red-500' : 'border-slate-300'}`}
                 value={formData.completionDate}
                 onChange={e => setFormData({...formData, completionDate: e.target.value})}
               />
+              {errors.completionDate && <p className="text-red-500 text-xs mt-1">{errors.completionDate}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Completion Percentage (%)</label>
@@ -270,20 +296,21 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
                 type="number"
                 min="0"
                 max="100"
-                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 transition-all ${errors.completionPercentage ? 'border-red-500' : 'border-slate-300'}`}
                 value={formData.completionPercentage}
                 onChange={e => setFormData({...formData, completionPercentage: Number(e.target.value)})}
               />
+              {errors.completionPercentage && <p className="text-red-500 text-xs mt-1">{errors.completionPercentage}</p>}
             </div>
             <div className="md:col-span-2 lg:col-span-3">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Project Budget (₹)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Project Budget (₹) *</label>
               <input 
-                required
                 type="number"
-                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 transition-all ${errors.budget ? 'border-red-500' : 'border-slate-300'}`}
                 value={formData.budget}
                 onChange={e => setFormData({...formData, budget: Number(e.target.value)})}
               />
+              {errors.budget && <p className="text-red-500 text-xs mt-1">{errors.budget}</p>}
             </div>
           </div>
           <div className="mt-4 flex justify-end">

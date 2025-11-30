@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { chatWithSuperintendent } from '../services/geminiService';
 import { ChatMessage } from '../types';
-import { Send, Bot, User, HardHat } from 'lucide-react';
+import { Send, Bot, User, HardHat, WifiOff } from 'lucide-react';
 
 const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -14,6 +15,7 @@ const AIChat: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -24,9 +26,20 @@ const AIChat: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !isOnline) return;
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -78,7 +91,14 @@ const AIChat: React.FC = () => {
         </div>
         <div>
           <h2 className="text-white font-bold">Site Superintendent AI</h2>
-          <p className="text-slate-400 text-xs">Always on site. 24/7 Support.</p>
+          <div className="flex items-center gap-2">
+            <p className="text-slate-400 text-xs">Always on site. 24/7 Support.</p>
+            {!isOnline && (
+                <span className="text-[10px] bg-red-500 text-white px-1.5 rounded flex items-center gap-1">
+                    <WifiOff size={8} /> Offline
+                </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -127,17 +147,17 @@ const AIChat: React.FC = () => {
         <form onSubmit={handleSend} className="relative flex items-center gap-2">
           <input
             type="text"
-            className="flex-1 bg-slate-100 text-slate-900 placeholder-slate-500 border-0 rounded-full py-3 px-5 focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all"
-            placeholder="Ask about safety codes, concrete ratios, or scheduling..."
+            className="flex-1 bg-slate-100 text-slate-900 placeholder-slate-500 border-0 rounded-full py-3 px-5 focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all disabled:bg-slate-200 disabled:text-slate-500"
+            placeholder={isOnline ? "Ask about safety codes, concrete ratios, or scheduling..." : "You are offline. Reconnect to chat."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={loading}
+            disabled={loading || !isOnline}
           />
           <button
             type="submit"
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || !isOnline}
             className={`p-3 rounded-full text-white transition-colors
-              ${!input.trim() || loading 
+              ${!input.trim() || loading || !isOnline
                 ? 'bg-slate-300 cursor-not-allowed' 
                 : 'bg-orange-600 hover:bg-orange-700 shadow-md'}
             `}

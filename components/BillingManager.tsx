@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Project, Bill, ClientPayment } from '../types';
@@ -33,6 +34,10 @@ const BillingManager: React.FC<BillingManagerProps> = ({
   // Filter State
   const [selectedBillMonth, setSelectedBillMonth] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Validation States
+  const [billErrors, setBillErrors] = useState<Record<string, string>>({});
+  const [paymentErrors, setPaymentErrors] = useState<Record<string, string>>({});
 
   // State for Managing Client Payments
   const [managingProjectId, setManagingProjectId] = useState<string | null>(null);
@@ -130,6 +135,7 @@ const BillingManager: React.FC<BillingManagerProps> = ({
   // --- Bill Handlers ---
   const handleEditClick = (bill: Bill) => {
     setEditingId(bill.id);
+    setBillErrors({});
     setFormData({ ...bill });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -144,6 +150,7 @@ const BillingManager: React.FC<BillingManagerProps> = ({
   const resetForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
+    setBillErrors({});
     setFormData({
       serialNo: bills.length + 1,
       projectId: '',
@@ -184,8 +191,24 @@ const BillingManager: React.FC<BillingManagerProps> = ({
       });
   };
 
+  const validateBill = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.projectId) newErrors.projectId = "Project is required.";
+    if (!formData.billNo?.trim()) newErrors.billNo = "Bill No is required.";
+    if (!formData.workNature?.trim()) newErrors.workNature = "Work Nature is required.";
+    if (!formData.amount || Number(formData.amount) <= 0) newErrors.amount = "Base Amount must be greater than 0.";
+    if (Number(formData.gstRate) < 0) newErrors.gstRate = "GST Rate cannot be negative.";
+    if (!formData.billingMonth) newErrors.billingMonth = "Billing Month is required.";
+    if (!formData.certifyDate) newErrors.certifyDate = "Certify Date is required.";
+    
+    setBillErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateBill()) return;
+
     if (formData.projectId && formData.amount) {
       if (editingId) {
         const updatedBill: Bill = {
@@ -224,6 +247,7 @@ const BillingManager: React.FC<BillingManagerProps> = ({
   // --- Payment Management Handlers ---
   const handleManagePayments = (projectId: string) => {
     setManagingProjectId(projectId);
+    setPaymentErrors({});
     setPaymentForm({ amount: 0, date: new Date().toISOString().split('T')[0], remarks: '' });
     setEditingPaymentId(null);
   };
@@ -232,8 +256,19 @@ const BillingManager: React.FC<BillingManagerProps> = ({
     setManagingProjectId(null);
   };
 
+  const validatePayment = () => {
+    const newErrors: Record<string, string> = {};
+    if (!paymentForm.date) newErrors.date = "Date is required.";
+    if (!paymentForm.amount || Number(paymentForm.amount) <= 0) newErrors.amount = "Amount must be greater than 0.";
+    
+    setPaymentErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validatePayment()) return;
+
     if (managingProjectId && paymentForm.amount && onAddPayment && onEditPayment) {
         if (editingPaymentId) {
             onEditPayment({
@@ -254,11 +289,13 @@ const BillingManager: React.FC<BillingManagerProps> = ({
         }
         setPaymentForm({ amount: 0, date: new Date().toISOString().split('T')[0], remarks: '' });
         setEditingPaymentId(null);
+        setPaymentErrors({});
     }
   };
 
   const handleEditPaymentRecord = (payment: ClientPayment) => {
       setPaymentForm({ ...payment });
+      setPaymentErrors({});
       setEditingPaymentId(payment.id);
   };
 
@@ -292,34 +329,62 @@ const BillingManager: React.FC<BillingManagerProps> = ({
            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 animate-in slide-in-from-top-2">
              <h3 className="font-semibold mb-4 text-slate-800 border-b pb-2">{editingId ? 'Edit Bill' : 'New Bill Entry'}</h3>
              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input type="number" placeholder="SR No" className="border p-2 rounded" value={formData.serialNo} onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} />
-                <select className="border p-2 rounded" value={formData.projectId} onChange={e => setFormData({...formData, projectId: e.target.value})} required>
-                  <option value="">Select Project</option>
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-                <input type="text" placeholder="Bill No" className="border p-2 rounded" value={formData.billNo} onChange={e => setFormData({...formData, billNo: e.target.value})} required />
-                <input type="text" placeholder="Work Nature" className="border p-2 rounded" value={formData.workNature} onChange={e => setFormData({...formData, workNature: e.target.value})} required />
+                <div>
+                  <input type="number" placeholder="SR No" className="border p-2 rounded w-full" value={formData.serialNo} onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} />
+                </div>
+                <div>
+                    <select 
+                        className={`border p-2 rounded w-full ${billErrors.projectId ? 'border-red-500' : ''}`} 
+                        value={formData.projectId} 
+                        onChange={e => setFormData({...formData, projectId: e.target.value})} 
+                    >
+                    <option value="">Select Project *</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    {billErrors.projectId && <p className="text-red-500 text-xs mt-1">{billErrors.projectId}</p>}
+                </div>
+                <div>
+                    <input 
+                        type="text" 
+                        placeholder="Bill No *" 
+                        className={`border p-2 rounded w-full ${billErrors.billNo ? 'border-red-500' : ''}`} 
+                        value={formData.billNo} 
+                        onChange={e => setFormData({...formData, billNo: e.target.value})} 
+                    />
+                    {billErrors.billNo && <p className="text-red-500 text-xs mt-1">{billErrors.billNo}</p>}
+                </div>
+                <div>
+                    <input 
+                        type="text" 
+                        placeholder="Work Nature *" 
+                        className={`border p-2 rounded w-full ${billErrors.workNature ? 'border-red-500' : ''}`} 
+                        value={formData.workNature} 
+                        onChange={e => setFormData({...formData, workNature: e.target.value})} 
+                    />
+                    {billErrors.workNature && <p className="text-red-500 text-xs mt-1">{billErrors.workNature}</p>}
+                </div>
                 
                 <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Base Amount (₹)</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">Base Amount (₹) *</label>
                         <input 
                             type="number" 
-                            className="w-full border p-2 rounded" 
+                            className={`w-full border p-2 rounded ${billErrors.amount ? 'border-red-500' : ''}`}
                             value={formData.amount} 
                             onChange={e => handleAmountChange(Number(e.target.value))} 
-                            required 
                         />
+                        {billErrors.amount && <p className="text-red-500 text-xs mt-1">{billErrors.amount}</p>}
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-slate-500 mb-1">GST (%)</label>
                         <input 
                             type="number" 
-                            className="w-full border p-2 rounded" 
+                            className={`w-full border p-2 rounded ${billErrors.gstRate ? 'border-red-500' : ''}`} 
                             value={formData.gstRate} 
                             onChange={e => handleGstChange(Number(e.target.value))} 
                             placeholder="e.g. 18"
                         />
+                         {billErrors.gstRate && <p className="text-red-500 text-xs mt-1">{billErrors.gstRate}</p>}
                     </div>
                     <div>
                          <label className="block text-xs font-medium text-slate-500 mb-1">Total Value (₹)</label>
@@ -333,8 +398,24 @@ const BillingManager: React.FC<BillingManagerProps> = ({
                     </div>
                 </div>
 
-                <input type="month" className="border p-2 rounded" value={formData.billingMonth} onChange={e => setFormData({...formData, billingMonth: e.target.value})} required />
-                <input type="date" className="border p-2 rounded" value={formData.certifyDate} onChange={e => setFormData({...formData, certifyDate: e.target.value})} required />
+                <div>
+                    <input 
+                        type="month" 
+                        className={`border p-2 rounded w-full ${billErrors.billingMonth ? 'border-red-500' : ''}`} 
+                        value={formData.billingMonth} 
+                        onChange={e => setFormData({...formData, billingMonth: e.target.value})} 
+                    />
+                    {billErrors.billingMonth && <p className="text-red-500 text-xs mt-1">{billErrors.billingMonth}</p>}
+                </div>
+                <div>
+                    <input 
+                        type="date" 
+                        className={`border p-2 rounded w-full ${billErrors.certifyDate ? 'border-red-500' : ''}`} 
+                        value={formData.certifyDate} 
+                        onChange={e => setFormData({...formData, certifyDate: e.target.value})} 
+                    />
+                    {billErrors.certifyDate && <p className="text-red-500 text-xs mt-1">{billErrors.certifyDate}</p>}
+                </div>
                 <div className="md:col-span-2">
                    <button type="submit" className="w-full bg-slate-900 text-white p-2 rounded hover:bg-slate-800">
                      {editingId ? 'Update Bill' : 'Save Bill'}
@@ -517,24 +598,24 @@ const BillingManager: React.FC<BillingManagerProps> = ({
                         <h4 className="text-sm font-semibold mb-3">{editingPaymentId ? 'Edit Payment' : 'Add New Payment'}</h4>
                         <form onSubmit={handlePaymentSubmit} className="space-y-3">
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">Date</label>
+                                <label className="block text-xs font-medium text-slate-500 mb-1">Date *</label>
                                 <input 
                                     type="date" 
-                                    className="w-full border p-2 rounded text-sm" 
+                                    className={`w-full border p-2 rounded text-sm ${paymentErrors.date ? 'border-red-500' : ''}`} 
                                     value={paymentForm.date} 
                                     onChange={e => setPaymentForm({...paymentForm, date: e.target.value})} 
-                                    required 
                                 />
+                                {paymentErrors.date && <p className="text-red-500 text-xs mt-1">{paymentErrors.date}</p>}
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">Amount (₹)</label>
+                                <label className="block text-xs font-medium text-slate-500 mb-1">Amount (₹) *</label>
                                 <input 
                                     type="number" 
-                                    className="w-full border p-2 rounded text-sm" 
+                                    className={`w-full border p-2 rounded text-sm ${paymentErrors.amount ? 'border-red-500' : ''}`} 
                                     value={paymentForm.amount} 
                                     onChange={e => setPaymentForm({...paymentForm, amount: Number(e.target.value)})} 
-                                    required 
                                 />
+                                {paymentErrors.amount && <p className="text-red-500 text-xs mt-1">{paymentErrors.amount}</p>}
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 mb-1">Remarks</label>
@@ -553,7 +634,7 @@ const BillingManager: React.FC<BillingManagerProps> = ({
                                 {editingPaymentId && (
                                     <button 
                                         type="button" 
-                                        onClick={() => { setEditingPaymentId(null); setPaymentForm({amount:0, date: '', remarks: ''})}}
+                                        onClick={() => { setEditingPaymentId(null); setPaymentForm({amount:0, date: '', remarks: ''}); setPaymentErrors({});}}
                                         className="px-3 bg-slate-200 text-slate-600 rounded text-sm hover:bg-slate-300"
                                     >
                                         Cancel

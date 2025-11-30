@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database, LogOut, Smartphone } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database, LogOut, Smartphone, Wifi, WifiOff } from 'lucide-react';
 import { AppView } from '../types';
 
 interface SidebarProps {
@@ -10,6 +11,7 @@ interface SidebarProps {
   onLogout: () => void;
   showInstallButton?: boolean;
   onInstallClick?: () => void;
+  isOnline?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -19,7 +21,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   setIsMobileOpen, 
   onLogout,
   showInstallButton,
-  onInstallClick
+  onInstallClick,
+  isOnline = true
 }) => {
   const menuItems = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
@@ -122,12 +125,18 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-orange-500 font-bold border border-slate-600 font-['Oswald']">
-                TR
+              <div className="relative">
+                 <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-orange-500 font-bold border border-slate-600 font-['Oswald']">
+                    TR
+                 </div>
+                 {/* Online Status Indicator */}
+                 <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-950 flex items-center justify-center ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}>
+                    {isOnline ? <Wifi size={8} className="text-white" /> : <WifiOff size={8} className="text-white" />}
+                 </div>
               </div>
               <div>
                 <p className="text-sm font-medium text-white">Tousif Reja</p>
-                <p className="text-xs text-slate-500">Managing Director</p>
+                <p className="text-xs text-slate-500">{isOnline ? 'Online' : 'Offline Mode'}</p>
               </div>
             </div>
             <button 

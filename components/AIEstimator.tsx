@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { generateConstructionEstimate } from '../services/geminiService';
 import { EstimateItem } from '../types';
-import { Calculator, Sparkles, AlertTriangle, Download, RefreshCw, Building2 } from 'lucide-react';
+import { Calculator, Sparkles, AlertTriangle, Download, RefreshCw, Building2, WifiOff } from 'lucide-react';
 
 const AIEstimator: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [estimate, setEstimate] = useState<EstimateItem[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
+    if (!isOnline) {
+      setError("Internet connection required for AI estimates.");
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -19,8 +36,8 @@ const AIEstimator: React.FC = () => {
     try {
       const items = await generateConstructionEstimate(prompt);
       setEstimate(items);
-    } catch (err) {
-      setError("Failed to generate estimate. Please try again with a more detailed description.");
+    } catch (err: any) {
+      setError(err.message || "Failed to generate estimate. Please try again with a more detailed description.");
     } finally {
       setLoading(false);
     }
@@ -82,22 +99,34 @@ const AIEstimator: React.FC = () => {
           <label className="block text-sm font-medium text-slate-700 mb-2">Project Description</label>
           <div className="relative">
             <textarea
-              className="w-full h-32 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+              className="w-full h-32 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none disabled:bg-slate-100 disabled:text-slate-500"
               placeholder="E.g., Build a 20x25 foot wooden deck with treated pine, including concrete footings, railing, and stairs. Height is 3 feet off the ground."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              disabled={loading || !isOnline}
             />
             <button
               onClick={handleGenerate}
-              disabled={loading || !prompt.trim()}
+              disabled={loading || !prompt.trim() || !isOnline}
               className={`absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-all
-                ${loading || !prompt.trim() 
+                ${loading || !prompt.trim() || !isOnline
                   ? 'bg-slate-400 cursor-not-allowed' 
                   : 'bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-900/20'}
               `}
             >
-              {loading ? <RefreshCw className="animate-spin" size={18} /> : <Sparkles size={18} />}
-              {loading ? 'Generating...' : 'Generate Estimate'}
+              {!isOnline ? (
+                 <>
+                   <WifiOff size={18} /> Offline
+                 </>
+              ) : loading ? (
+                 <>
+                   <RefreshCw className="animate-spin" size={18} /> Generating...
+                 </>
+              ) : (
+                 <>
+                    <Sparkles size={18} /> Generate Estimate
+                 </>
+              )}
             </button>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center">
@@ -107,7 +136,8 @@ const AIEstimator: React.FC = () => {
         </div>
 
         {error && (
-          <div className="p-6 text-center text-red-600 bg-red-50">
+          <div className="p-6 text-center text-red-600 bg-red-50 flex flex-col items-center">
+             <div className="mb-2"><AlertTriangle size={24}/></div>
             {error}
           </div>
         )}

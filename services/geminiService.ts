@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { EstimateItem } from "../types";
 
@@ -46,6 +47,10 @@ const estimateSchema: Schema = {
 };
 
 export const generateConstructionEstimate = async (projectDescription: string): Promise<EstimateItem[]> => {
+  if (!navigator.onLine) {
+    throw new Error("You are currently offline. Please connect to the internet to use AI features.");
+  }
+  
   if (!ai) {
     console.error("API Key is missing. Please set VITE_API_KEY or REACT_APP_API_KEY in your environment variables.");
     return [];
@@ -75,6 +80,10 @@ export const generateConstructionEstimate = async (projectDescription: string): 
 };
 
 export const chatWithSuperintendent = async (history: { role: string; parts: { text: string }[] }[], newMessage: string) => {
+  if (!navigator.onLine) {
+    return "Connection lost. I am in offline mode. I will be back when the internet is restored.";
+  }
+
   if (!ai) {
     return "I can't connect right now. Please check your API Key configuration.";
   }

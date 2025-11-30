@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { Project, PurchaseEntry } from '../types';
 import { ShoppingCart, Plus, Pencil, Trash2, Download, Search, IndianRupee, Building2 } from 'lucide-react';
@@ -14,6 +16,7 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
   const [selectedProjectId, setSelectedProjectId] = useState<string>('All');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<Partial<PurchaseEntry>>({
     serialNo: 1,
@@ -34,6 +37,7 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
 
   const handleEditClick = (purchase: PurchaseEntry) => {
     setEditingId(purchase.id);
+    setErrors({});
     setFormData({ ...purchase });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -48,6 +52,7 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
   const resetForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
+    setErrors({});
     setFormData({
       serialNo: purchases.length + 1,
       projectId: selectedProjectId !== 'All' ? selectedProjectId : '',
@@ -76,8 +81,24 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
       setFormData(updatedForm);
   };
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.projectId) newErrors.projectId = "Project is required.";
+    if (!formData.date) newErrors.date = "Date is required.";
+    if (!formData.serialNo || Number(formData.serialNo) <= 0) newErrors.serialNo = "Valid SR No is required.";
+    if (!formData.description?.trim()) newErrors.description = "Material Description is required.";
+    if (!formData.unit?.trim()) newErrors.unit = "Unit is required.";
+    if (!formData.quantity || Number(formData.quantity) <= 0) newErrors.quantity = "Quantity must be greater than 0.";
+    if (!formData.rate || Number(formData.rate) <= 0) newErrors.rate = "Rate must be greater than 0.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     if (formData.projectId && formData.description && formData.quantity && formData.rate) {
       if (editingId) {
         // Update
@@ -175,6 +196,7 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
                   if(isFormOpen) resetForm();
                   else {
                       setIsFormOpen(true);
+                      setErrors({});
                       setFormData(prev => ({...prev, serialNo: purchases.length + 1}));
                   }
                 }}
@@ -217,78 +239,78 @@ const PurchaseManager: React.FC<PurchaseManagerProps> = ({ projects, purchases, 
              <h3 className="font-semibold mb-4 text-slate-800 border-b pb-2">{editingId ? 'Edit Purchase Entry' : 'New Purchase Entry'}</h3>
              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">Project Name</label>
+                   <label className="block text-xs font-medium text-slate-500 mb-1">Project Name *</label>
                    <select 
-                      className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none" 
+                      className={`w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none ${errors.projectId ? 'border-red-500' : ''}`} 
                       value={formData.projectId} 
                       onChange={e => handleInputChange('projectId', e.target.value)} 
-                      required
                    >
                      <option value="">Select Project</option>
                      {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                    </select>
+                   {errors.projectId && <p className="text-red-500 text-xs mt-1">{errors.projectId}</p>}
                 </div>
                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">Date</label>
+                   <label className="block text-xs font-medium text-slate-500 mb-1">Date *</label>
                    <input 
                       type="date" 
-                      className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none" 
+                      className={`w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none ${errors.date ? 'border-red-500' : ''}`} 
                       value={formData.date} 
                       onChange={e => handleInputChange('date', e.target.value)} 
-                      required 
                     />
+                    {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
                 </div>
                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">SR No</label>
+                   <label className="block text-xs font-medium text-slate-500 mb-1">SR No *</label>
                    <input 
                       type="number" 
-                      className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none" 
+                      className={`w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none ${errors.serialNo ? 'border-red-500' : ''}`} 
                       value={formData.serialNo} 
                       onChange={e => handleInputChange('serialNo', Number(e.target.value))} 
-                      required 
                     />
+                    {errors.serialNo && <p className="text-red-500 text-xs mt-1">{errors.serialNo}</p>}
                 </div>
                  <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">Material Description</label>
+                   <label className="block text-xs font-medium text-slate-500 mb-1">Material Description *</label>
                    <input 
                       type="text" 
                       placeholder="e.g. Cement, Sand, Steel"
-                      className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none" 
+                      className={`w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none ${errors.description ? 'border-red-500' : ''}`} 
                       value={formData.description} 
                       onChange={e => handleInputChange('description', e.target.value)} 
-                      required 
                     />
+                    {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
                 </div>
                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">Unit</label>
+                   <label className="block text-xs font-medium text-slate-500 mb-1">Unit *</label>
                    <input 
                       type="text" 
                       placeholder="Bags, Kg, Brass"
-                      className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none" 
+                      className={`w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none ${errors.unit ? 'border-red-500' : ''}`} 
                       value={formData.unit} 
                       onChange={e => handleInputChange('unit', e.target.value)} 
-                      required 
                     />
+                    {errors.unit && <p className="text-red-500 text-xs mt-1">{errors.unit}</p>}
                 </div>
                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">Quantity</label>
+                   <label className="block text-xs font-medium text-slate-500 mb-1">Quantity *</label>
                    <input 
                       type="number" 
-                      className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none" 
+                      className={`w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none ${errors.quantity ? 'border-red-500' : ''}`} 
                       value={formData.quantity} 
                       onChange={e => handleInputChange('quantity', e.target.value)} 
-                      required 
                     />
+                    {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
                 </div>
                 <div>
-                   <label className="block text-xs font-medium text-slate-500 mb-1">Rate (₹)</label>
+                   <label className="block text-xs font-medium text-slate-500 mb-1">Rate (₹) *</label>
                    <input 
                       type="number" 
-                      className="w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none" 
+                      className={`w-full border p-2 rounded focus:ring-2 focus:ring-orange-500 outline-none ${errors.rate ? 'border-red-500' : ''}`} 
                       value={formData.rate} 
                       onChange={e => handleInputChange('rate', e.target.value)} 
-                      required 
                     />
+                    {errors.rate && <p className="text-red-500 text-xs mt-1">{errors.rate}</p>}
                 </div>
                 <div>
                    <label className="block text-xs font-medium text-slate-500 mb-1">Total Amount (₹)</label>

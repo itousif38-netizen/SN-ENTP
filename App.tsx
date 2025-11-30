@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, WifiOff } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ProjectList from './components/ProjectList';
@@ -43,6 +44,26 @@ function usePersistentState<T>(key: string, initialValue: T): [T, React.Dispatch
   return [state, setState];
 }
 
+// Hook for Online Status
+function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
+
 function App() {
   // Auth State (Session based, resets on refresh which is fine for security)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,6 +71,8 @@ function App() {
 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const isOnline = useOnlineStatus();
 
   // PWA Install State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -380,9 +403,18 @@ function App() {
         onLogout={handleLogout}
         showInstallButton={!!deferredPrompt}
         onInstallClick={handleInstallClick}
+        isOnline={isOnline}
       />
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+        {/* Offline Banner */}
+        {!isOnline && (
+          <div className="bg-slate-800 text-white px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top z-50">
+            <WifiOff size={16} className="text-orange-500" />
+            <span>You are currently offline. Changes are saved locally and will sync when online.</span>
+          </div>
+        )}
+
         {/* Mobile Header */}
         <header className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between z-10">
           <button 

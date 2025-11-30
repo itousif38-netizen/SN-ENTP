@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Project, Worker } from '../types';
 import { Users, Search, Filter, Plus, UserPlus, Pencil, Trash2 } from 'lucide-react';
@@ -16,6 +17,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState<Partial<Worker>>({
     serialNo: workers.length + 1,
@@ -67,6 +69,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
 
   const handleEditClick = (worker: Worker) => {
     setEditingId(worker.id);
+    setErrors({});
     setFormData({ ...worker, exitDate: worker.exitDate || '' });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -81,6 +84,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
   const resetForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
+    setErrors({});
     setFormData({
       serialNo: workers.length + 1,
       workerId: '',
@@ -92,8 +96,27 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
     });
   };
 
+  const validateForm = () => {
+      const newErrors: Record<string, string> = {};
+      if (!formData.projectId) newErrors.projectId = "Project is required.";
+      if (!formData.name?.trim()) newErrors.name = "Worker Name is required.";
+      if (!formData.serialNo || Number(formData.serialNo) <= 0) newErrors.serialNo = "Valid SR No is required.";
+      if (!formData.designation) newErrors.designation = "Designation is required.";
+      if (!formData.joiningDate) newErrors.joiningDate = "Joining Date is required.";
+      
+      if (formData.joiningDate && formData.exitDate) {
+          if (new Date(formData.exitDate) < new Date(formData.joiningDate)) {
+              newErrors.exitDate = "Exit Date cannot be before Joining Date.";
+          }
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     if (formData.name && formData.projectId) {
       if (editingId) {
         // Update
@@ -150,11 +173,16 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
            <h3 className="font-semibold mb-4">{editingId ? 'Edit Worker Details' : 'Register New Worker'}</h3>
            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Project Site</label>
-                <select className="w-full border p-2 rounded" value={formData.projectId} onChange={e => setFormData({...formData, projectId: e.target.value})} required>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Project Site *</label>
+                <select 
+                    className={`w-full border p-2 rounded ${errors.projectId ? 'border-red-500' : ''}`}
+                    value={formData.projectId} 
+                    onChange={e => setFormData({...formData, projectId: e.target.value})} 
+                >
                   <option value="">Select Project</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
+                {errors.projectId && <p className="text-red-500 text-xs mt-1">{errors.projectId}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Worker ID (Auto-Generated)</label>
@@ -164,24 +192,35 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
                     value={formData.workerId} 
                     onChange={e => setFormData({...formData, workerId: e.target.value})} 
                     placeholder="Select Project first"
-                    required 
+                    readOnly
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">SR No</label>
-                <input type="number" className="w-full border p-2 rounded" value={formData.serialNo} onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} required />
+                <label className="block text-xs font-medium text-slate-500 mb-1">SR No *</label>
+                <input 
+                    type="number" 
+                    className={`w-full border p-2 rounded ${errors.serialNo ? 'border-red-500' : ''}`}
+                    value={formData.serialNo} 
+                    onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} 
+                />
+                {errors.serialNo && <p className="text-red-500 text-xs mt-1">{errors.serialNo}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
-                <input type="text" className="w-full border p-2 rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+                <label className="block text-xs font-medium text-slate-500 mb-1">Full Name *</label>
+                <input 
+                    type="text" 
+                    className={`w-full border p-2 rounded ${errors.name ? 'border-red-500' : ''}`}
+                    value={formData.name} 
+                    onChange={e => setFormData({...formData, name: e.target.value})} 
+                />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Designation</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Designation *</label>
                 <select 
-                  className="w-full border p-2 rounded" 
+                  className={`w-full border p-2 rounded ${errors.designation ? 'border-red-500' : ''}`}
                   value={formData.designation} 
                   onChange={e => setFormData({...formData, designation: e.target.value})} 
-                  required
                 >
                   <option value="">Select Designation</option>
                   <option value="Sr. Carpenter">Sr. Carpenter</option>
@@ -191,14 +230,27 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
                   <option value="Rigger">Rigger</option>
                   <option value="Mason">Mason</option>
                 </select>
+                {errors.designation && <p className="text-red-500 text-xs mt-1">{errors.designation}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Joining Date</label>
-                <input type="date" className="w-full border p-2 rounded" value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})} required />
+                <label className="block text-xs font-medium text-slate-500 mb-1">Joining Date *</label>
+                <input 
+                    type="date" 
+                    className={`w-full border p-2 rounded ${errors.joiningDate ? 'border-red-500' : ''}`}
+                    value={formData.joiningDate} 
+                    onChange={e => setFormData({...formData, joiningDate: e.target.value})} 
+                />
+                {errors.joiningDate && <p className="text-red-500 text-xs mt-1">{errors.joiningDate}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Exit Date (Optional)</label>
-                <input type="date" className="w-full border p-2 rounded" value={formData.exitDate} onChange={e => setFormData({...formData, exitDate: e.target.value})} />
+                <input 
+                    type="date" 
+                    className={`w-full border p-2 rounded ${errors.exitDate ? 'border-red-500' : ''}`}
+                    value={formData.exitDate} 
+                    onChange={e => setFormData({...formData, exitDate: e.target.value})} 
+                />
+                {errors.exitDate && <p className="text-red-500 text-xs mt-1">{errors.exitDate}</p>}
               </div>
               <div className="md:col-span-3 flex justify-end mt-2">
                 <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700">
