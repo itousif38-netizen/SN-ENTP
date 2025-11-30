@@ -271,7 +271,7 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
               <thead>
                 <tr>
                   <th className="border border-black px-2 py-2 text-center w-10">SR</th>
-                  <th className="border border-black px-2 py-2 text-center">Worker Name</th>
+                  <th className="border border-black px-2 py-2 text-center min-w-[200px]">Worker Name</th>
                   <th className="border border-black px-2 py-2 text-center w-24">Total</th>
                   <th className="border border-black px-2 py-2 text-center w-24">Kharchi</th>
                   <th className="border border-black px-2 py-2 text-center w-24">Mess</th>
@@ -290,7 +290,7 @@ const WorkerPayment: React.FC<WorkerPaymentProps> = ({ projects, workers, kharch
                   return (
                     <tr key={worker.id} className="h-12">
                       <td className="border border-black px-2 py-2 text-center">{worker.serialNo}</td>
-                      <td className="border border-black px-2 py-2 text-center font-medium">{worker.name}</td>
+                      <td className="border border-black px-2 py-2 text-center font-medium whitespace-nowrap">{worker.name}</td>
                       <td className="border border-black px-2 py-2 text-center font-bold">
                          {workVal > 0 ? workVal.toLocaleString('en-IN') : ''}
                       </td>
