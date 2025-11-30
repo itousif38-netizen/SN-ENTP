@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Menu, WifiOff, RefreshCw, X, User, Settings, HelpCircle, LayoutGrid, Power } from 'lucide-react';
+import { Menu, WifiOff, RefreshCw, Settings, Bell, Search, UserCircle, ChevronDown } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ProjectList from './components/ProjectList';
@@ -17,8 +18,10 @@ import AIEstimator from './components/AIEstimator';
 import AIChat from './components/AIChat';
 import Login from './components/Login';
 import DataBackup from './components/DataBackup';
-import { AppView, Project, Worker, Bill, KharchiEntry, AdvanceEntry, ClientPayment, PurchaseEntry, ExecutionLevel, WorkerPayment as WorkerPaymentType, MessEntry } from './types';
-import { MOCK_PROJECTS, MOCK_WORKERS, MOCK_BILLS, MOCK_KHARCHI, MOCK_ADVANCES, MOCK_CLIENT_PAYMENTS, MOCK_PURCHASES, MOCK_EXECUTION, MOCK_MESS_ENTRIES } from './constants';
+import AttendanceTracker from './components/AttendanceTracker';
+import InventoryManager from './components/InventoryManager';
+import { AppView, Project, Worker, Bill, KharchiEntry, AdvanceEntry, ClientPayment, PurchaseEntry, ExecutionLevel, WorkerPayment as WorkerPaymentType, MessEntry, AttendanceRecord, StockConsumption } from './types';
+import { MOCK_PROJECTS, MOCK_WORKERS, MOCK_BILLS, MOCK_KHARCHI, MOCK_ADVANCES, MOCK_CLIENT_PAYMENTS, MOCK_PURCHASES, MOCK_EXECUTION, MOCK_MESS_ENTRIES, MOCK_ATTENDANCE, MOCK_STOCK_CONSUMPTION } from './constants';
 
 // Custom Hook for Local Storage Persistence
 function usePersistentState<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -64,7 +67,7 @@ function useOnlineStatus() {
 }
 
 function App() {
-  // Auth State (Session based, resets on refresh which is fine for security)
+  // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [logoutNotification, setLogoutNotification] = useState<string | null>(null);
 
@@ -117,6 +120,8 @@ function App() {
   const [executionData, setExecutionData] = usePersistentState<ExecutionLevel[]>('sn_execution', MOCK_EXECUTION);
   const [messEntries, setMessEntries] = usePersistentState<MessEntry[]>('sn_mess', MOCK_MESS_ENTRIES);
   const [workerPayments, setWorkerPayments] = usePersistentState<WorkerPaymentType[]>('sn_worker_payments', []);
+  const [attendance, setAttendance] = usePersistentState<AttendanceRecord[]>('sn_attendance', MOCK_ATTENDANCE);
+  const [consumption, setConsumption] = usePersistentState<StockConsumption[]>('sn_consumption', MOCK_STOCK_CONSUMPTION);
 
   // --- Handlers (CRUD operations remain same) ---
   const handleAddProject = (newProject: Project) => setProjects(prev => [...prev, newProject]);
@@ -127,6 +132,7 @@ function App() {
   const handleAddPurchase = (newPurchase: PurchaseEntry) => setPurchases(prev => [...prev, newPurchase]);
   const handleAddExecution = (newExecution: ExecutionLevel) => setExecutionData(prev => [...prev, newExecution]);
   const handleAddMess = (newMess: MessEntry) => setMessEntries(prev => [...prev, newMess]);
+  const handleAddConsumption = (newConsumption: StockConsumption) => setConsumption(prev => [...prev, newConsumption]);
 
   const handleEditProject = (updatedProject: Project) => setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
   const handleEditWorker = (updatedWorker: Worker) => setWorkers(prev => prev.map(w => w.id === updatedWorker.id ? updatedWorker : w));
@@ -145,12 +151,20 @@ function App() {
   const handleDeletePurchase = (id: string) => setPurchases(prev => prev.filter(p => p.id !== id));
   const handleDeleteExecution = (id: string) => setExecutionData(prev => prev.filter(e => e.id !== id));
   const handleDeleteMess = (id: string) => setMessEntries(prev => prev.filter(m => m.id !== id));
+  const handleDeleteConsumption = (id: string) => setConsumption(prev => prev.filter(c => c.id !== id));
 
   const handleUpdateKharchi = (entries: KharchiEntry[]) => {
     setKharchi(prev => {
         const otherEntries = prev.filter(p => !entries.some(e => e.id === p.id));
         return [...otherEntries, ...entries];
     });
+  };
+
+  const handleUpdateAttendance = (entries: AttendanceRecord[]) => {
+    // We replace records based on logic handled inside AttendanceTracker, but here we just set the state
+    // To be safe, filter out any overlapping IDs from previous state if needed, though Tracker handles it.
+    // Simpler approach: Filter out records that are being updated, then append new ones.
+    setAttendance(entries);
   };
 
   const handleSaveWorkerPayments = (records: WorkerPaymentType[]) => {
@@ -171,6 +185,8 @@ function App() {
     if (data.executionData) setExecutionData(data.executionData);
     if (data.messEntries) setMessEntries(data.messEntries);
     if (data.workerPayments) setWorkerPayments(data.workerPayments);
+    if (data.attendance) setAttendance(data.attendance);
+    if (data.consumption) setConsumption(data.consumption);
   };
 
   const handleLogin = (success: boolean) => {
@@ -193,103 +209,107 @@ function App() {
       case AppView.DASHBOARD: return <Dashboard projects={projects} />;
       case AppView.PROJECTS: return <ProjectList projects={projects} onAddProject={handleAddProject} onEditProject={handleEditProject} onDeleteProject={handleDeleteProject} />;
       case AppView.WORKERS: return <WorkerManager workers={workers} projects={projects} onAddWorker={handleAddWorker} onEditWorker={handleEditWorker} onDeleteWorker={handleDeleteWorker} />;
+      case AppView.ATTENDANCE: return <AttendanceTracker projects={projects} workers={workers} attendance={attendance} onUpdateAttendance={handleUpdateAttendance} />;
       case AppView.BILLING: return <BillingManager projects={projects} bills={bills} clientPayments={clientPayments} onAddBill={handleAddBill} onEditBill={handleEditBill} onDeleteBill={handleDeleteBill} onAddPayment={handleAddClientPayment} onEditPayment={handleEditClientPayment} onDeletePayment={handleDeleteClientPayment} />;
       case AppView.KHARCHI: return <KharchiTracker projects={projects} workers={workers} kharchi={kharchi} onUpdateKharchi={handleUpdateKharchi} />;
       case AppView.ADVANCE: return <AdvanceTracker projects={projects} workers={workers} advances={advances} onAddAdvance={handleAddAdvance} onEditAdvance={handleEditAdvance} onDeleteAdvance={handleDeleteAdvance} />;
       case AppView.WORKER_PAYMENT: return <WorkerPayment projects={projects} workers={workers} kharchi={kharchi} advances={advances} onSavePaymentRecord={handleSaveWorkerPayments} />;
       case AppView.EXPENSES: return <ExpenseManager projects={projects} purchases={purchases} kharchi={kharchi} advances={advances} clientPayments={clientPayments} workerPayments={workerPayments} messEntries={messEntries} bills={bills} />;
       case AppView.PURCHASE: return <PurchaseManager projects={projects} purchases={purchases} onAddPurchase={handleAddPurchase} onEditPurchase={handleEditPurchase} onDeletePurchase={handleDeletePurchase} />;
+      case AppView.INVENTORY: return <InventoryManager projects={projects} purchases={purchases} consumption={consumption} onAddConsumption={handleAddConsumption} onDeleteConsumption={handleDeleteConsumption} />;
       case AppView.EXECUTION: return <ExecutionTracker projects={projects} executionData={executionData} onAddExecution={handleAddExecution} onUpdateExecution={handleUpdateExecution} onDeleteExecution={handleDeleteExecution} />;
       case AppView.MESS: return <MessManager projects={projects} messEntries={messEntries} onAddMess={handleAddMess} onEditMess={handleEditMess} onDeleteMess={handleDeleteMess} />;
       case AppView.GST: return <GSTDashboard projects={projects} bills={bills} />;
       case AppView.ESTIMATOR: return <AIEstimator />;
       case AppView.ASSISTANT: return <AIChat />;
-      case AppView.BACKUP: return <DataBackup currentData={{ projects, workers, bills, clientPayments, kharchi, advances, purchases, executionData, messEntries, workerPayments }} onRestore={handleRestoreData} />;
+      case AppView.BACKUP: return <DataBackup currentData={{ projects, workers, bills, clientPayments, kharchi, advances, purchases, executionData, messEntries, workerPayments, attendance, consumption }} onRestore={handleRestoreData} />;
       default: return <Dashboard projects={projects} />;
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#f2f3f5] font-['Roboto'] overflow-hidden">
-      {/* Tally Prime Style Top Bar */}
-      <div className="h-12 bg-tally-teal flex items-center justify-between px-4 shadow-md z-50 text-white shrink-0">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden text-white hover:bg-white/10 p-1 rounded"
-          >
-            <Menu size={20} />
-          </button>
-          
-          <div className="flex items-center gap-3">
-             <div className="font-bold text-lg tracking-wide border-r border-white/30 pr-4">SN ENTERPRISE</div>
-             <div className="hidden md:flex text-sm text-white/90 gap-4">
-                 <span className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded">K: Company</span>
-                 <span className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded">Y: Data</span>
-                 <span className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded">Z: Exchange</span>
+    <div className="flex h-screen bg-[#f8fafc] font-['Inter'] overflow-hidden">
+      <Sidebar 
+        currentView={currentView} 
+        onChangeView={setCurrentView} 
+        isMobileOpen={isMobileMenuOpen}
+        setIsMobileOpen={setIsMobileMenuOpen}
+        onLogout={handleLogout}
+        showInstallButton={!!deferredPrompt}
+        onInstallClick={handleInstallClick}
+        isOnline={isOnline}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        
+        {/* Pro Top Bar */}
+        <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+             {/* Mobile Toggle & Brand */}
+             <div className="flex items-center gap-4">
+                 <button 
+                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                   className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                 >
+                   <Menu size={20} />
+                 </button>
+                 
+                 {/* Breadcrumbs / Page Title (Contextual) */}
+                 <div className="hidden md:flex flex-col">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">SN Enterprise</span>
+                    <h2 className="text-sm font-bold text-slate-800">{currentView}</h2>
+                 </div>
              </div>
-          </div>
+
+             {/* Right Actions */}
+             <div className="flex items-center gap-3">
+                
+                {/* Search Bar */}
+                <div className="hidden lg:flex items-center relative mr-2">
+                    <Search size={14} className="absolute left-3 text-slate-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Search..." 
+                      className="bg-slate-100 border-none rounded-full py-1.5 pl-9 pr-4 text-xs font-medium focus:ring-2 focus:ring-blue-500 w-48 transition-all focus:w-64"
+                    />
+                </div>
+
+                {!isOnline && (
+                    <div className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-red-100 animate-pulse">
+                      <WifiOff size={12} /> <span className="hidden sm:inline">Offline</span>
+                    </div>
+                )}
+                {isOnline && isSyncing && (
+                    <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-blue-100">
+                      <RefreshCw size={12} className="animate-spin" /> <span className="hidden sm:inline">Syncing</span>
+                    </div>
+                )}
+
+                <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+                <button className="relative text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                    <Bell size={20} />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+                
+                <div className="flex items-center gap-2 pl-2 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition-colors">
+                    <div className="w-8 h-8 bg-gradient-to-tr from-slate-700 to-slate-900 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                        AD
+                    </div>
+                    <div className="hidden sm:flex flex-col items-start">
+                        <span className="text-xs font-bold text-slate-700 leading-tight">Admin User</span>
+                        <span className="text-[10px] text-slate-400">Superintendent</span>
+                    </div>
+                    <ChevronDown size={14} className="text-slate-400 hidden sm:block" />
+                </div>
+             </div>
         </div>
 
-        <div className="flex items-center gap-3">
-           {!isOnline && (
-              <div className="bg-red-600 px-3 py-1 rounded text-xs font-bold flex items-center gap-1">
-                <WifiOff size={12} /> Offline
-              </div>
-           )}
-           {isOnline && isSyncing && (
-              <div className="bg-blue-600 px-3 py-1 rounded text-xs font-bold flex items-center gap-1 animate-pulse">
-                <RefreshCw size={12} className="animate-spin" /> Syncing
-              </div>
-           )}
-           
-           <div className="h-6 w-px bg-white/30 mx-1"></div>
-           
-           <button title="Settings" className="p-1.5 hover:bg-white/10 rounded"><Settings size={18} /></button>
-           <button title="Help" className="p-1.5 hover:bg-white/10 rounded"><HelpCircle size={18} /></button>
-           <button 
-            onClick={handleLogout}
-            title="Quit" 
-            className="p-1.5 hover:bg-red-600 rounded flex items-center gap-1 text-xs uppercase font-bold"
-           >
-             <Power size={16} /> <span className="hidden sm:inline">Quit</span>
-           </button>
-        </div>
-      </div>
-
-      {/* Main Layout Area */}
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
-          currentView={currentView} 
-          onChangeView={setCurrentView} 
-          isMobileOpen={isMobileMenuOpen}
-          setIsMobileOpen={setIsMobileMenuOpen}
-          onLogout={handleLogout}
-          showInstallButton={!!deferredPrompt}
-          onInstallClick={handleInstallClick}
-          isOnline={isOnline}
-        />
-
-        {/* Content Wrapper */}
-        <main className="flex-1 overflow-hidden relative flex flex-col">
-          {/* Yellow Line below header (Tally Accent) */}
-          <div className="h-1 bg-tally-yellow w-full shrink-0"></div>
-          
-          <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-[#f2f3f5]">
-            <div className="max-w-[1600px] mx-auto min-h-full">
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative custom-scrollbar bg-[#f8fafc]">
+           <div className="max-w-[1600px] mx-auto pb-10">
               {renderView()}
-            </div>
-          </div>
-          
-          {/* Tally Bottom Status Bar */}
-          <div className="h-6 bg-tally-teal-dark text-white text-[10px] flex items-center px-2 justify-between shrink-0">
-             <div>SN Enterprise Construction Manager v2.0</div>
-             <div className="flex gap-4">
-                <span>ODBC Server: Running</span>
-                <span>Port: 9000</span>
-                <span>Ctrl+M: Email</span>
-             </div>
-          </div>
+           </div>
         </main>
       </div>
     </div>

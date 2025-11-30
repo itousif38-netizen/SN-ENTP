@@ -6,50 +6,41 @@
     <title>SN Enterprise</title>
     <meta name="description" content="Construction Management System for SN Enterprise">
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#1b5e20">
+    <meta name="theme-color" content="#0f172a">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-      :root {
-        --tally-teal: #007692;
-        --tally-teal-dark: #005f76;
-        --tally-yellow: #fcc200;
-        --tally-yellow-light: #fff8db;
-        --tally-bg: #f2f3f5;
-        --tally-text: #1f1f1f;
-      }
       body {
-        font-family: 'Roboto', 'Open Sans', sans-serif;
-        background-color: var(--tally-bg);
-        color: var(--tally-text);
+        font-family: 'Inter', sans-serif;
+        background-color: #f3f4f6; /* Gray 100 */
+        color: #111827; /* Gray 900 */
         font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       
-      /* Tally Specific Utility Classes */
-      .bg-tally-teal { background-color: var(--tally-teal); }
-      .bg-tally-teal-dark { background-color: var(--tally-teal-dark); }
-      .text-tally-teal { color: var(--tally-teal); }
-      .bg-tally-yellow { background-color: var(--tally-yellow); }
-      .bg-tally-yellow-light { background-color: var(--tally-yellow-light); }
-      .border-tally-yellow { border-color: var(--tally-yellow); }
-      
-      /* Custom scrollbar for cleaner look */
+      /* Professional Scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #f1f1f1; 
+        background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
         background: #cbd5e1; 
-        border-radius: 4px;
+        border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
         background: #94a3b8; 
       }
 
-      /* Custom Animations */
+      /* Transitions */
+      .transition-all-300 {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Animations */
       @keyframes fadeInUp {
         from {
           opacity: 0;
@@ -62,33 +53,14 @@
       }
 
       .animate-fade-in-up {
-        animation: fadeInUp 0.3s ease-out forwards;
-      }
-
-      /* Table Styles Override for Tally Look */
-      table {
-        border-collapse: collapse;
-      }
-      th {
-        background-color: #eef2f5 !important;
-        color: #1f1f1f !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        border-bottom: 2px solid #cbd5e1;
-      }
-      tr:nth-child(even) {
-        background-color: #f8fafc;
-      }
-      tr:hover {
-        background-color: var(--tally-yellow-light) !important;
+        animation: fadeInUp 0.4s ease-out forwards;
       }
 
       @media print {
          body, html {
             height: auto !important;
             overflow: visible !important;
+            background: white !important;
          }
       }
     </style>
@@ -107,7 +79,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- This script tag is crucial for Vite and other modern bundlers to find your entry point -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>

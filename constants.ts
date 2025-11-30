@@ -1,6 +1,6 @@
 
 
-import { Project, ProjectStatus, Worker, Bill, KharchiEntry, AdvanceEntry, Resource, ClientPayment, PurchaseEntry, ExecutionLevel, MessEntry } from "./types";
+import { Project, ProjectStatus, Worker, Bill, KharchiEntry, AdvanceEntry, Resource, ClientPayment, PurchaseEntry, ExecutionLevel, MessEntry, AttendanceRecord, StockConsumption } from "./types";
 
 export const MOCK_PROJECTS: Project[] = [
   {
@@ -66,6 +66,7 @@ export const MOCK_PURCHASES: PurchaseEntry[] = [
   { id: 'p1', serialNo: 1, projectId: '1', description: 'UltraTech Cement', unit: 'Bags', quantity: 50, rate: 420, totalAmount: 21000, date: '2023-02-15' },
   { id: 'p2', serialNo: 2, projectId: '1', description: 'River Sand', unit: 'Brass', quantity: 5, rate: 6500, totalAmount: 32500, date: '2023-02-18' },
   { id: 'p3', serialNo: 1, projectId: '3', description: 'Steel 10mm', unit: 'Kg', quantity: 500, rate: 65, totalAmount: 32500, date: '2023-03-01' },
+  { id: 'p4', serialNo: 3, projectId: '1', description: 'Steel 10mm', unit: 'Kg', quantity: 1000, rate: 60, totalAmount: 60000, date: '2023-02-20' },
 ];
 
 export const MOCK_KHARCHI: KharchiEntry[] = [
@@ -141,4 +142,15 @@ export const MOCK_MESS_ENTRIES: MessEntry[] = [
     balance: 535, // 24000 - 24000 + 535
     remarks: ''
   }
+];
+
+export const MOCK_ATTENDANCE: AttendanceRecord[] = [
+  { id: 'att1', date: new Date().toISOString().split('T')[0], workerId: 'w1', projectId: '1', status: 'Present' },
+  { id: 'att2', date: new Date().toISOString().split('T')[0], workerId: 'w2', projectId: '1', status: 'Present' },
+  { id: 'att3', date: new Date().toISOString().split('T')[0], workerId: 'w3', projectId: '3', status: 'Absent' },
+];
+
+export const MOCK_STOCK_CONSUMPTION: StockConsumption[] = [
+  { id: 'sc1', date: '2023-02-20', projectId: '1', materialName: 'UltraTech Cement', quantity: 10, unit: 'Bags', activity: 'Foundation Pour' },
+  { id: 'sc2', date: '2023-02-22', projectId: '1', materialName: 'River Sand', quantity: 2, unit: 'Brass', activity: 'Wall Plaster' }
 ];

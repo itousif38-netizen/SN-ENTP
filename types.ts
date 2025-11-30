@@ -32,6 +32,25 @@ export interface Worker {
   serialNo: number;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  date: string;
+  workerId: string;
+  projectId: string;
+  status: 'Present' | 'Absent' | 'Half Day';
+  overtimeHours?: number;
+}
+
+export interface StockConsumption {
+  id: string;
+  date: string;
+  projectId: string;
+  materialName: string;
+  quantity: number;
+  unit: string;
+  activity: string; // e.g., "Slab Casting", "Wall Plaster"
+}
+
 export interface Bill {
   id: string;
   serialNo: number;
@@ -164,9 +183,11 @@ export interface Resource {
 export enum AppView {
   DASHBOARD = 'Dashboard',
   PROJECTS = 'Projects',
+  WORKERS = 'Workers',
+  ATTENDANCE = 'Attendance',
   EXECUTION = 'Execution',
   PURCHASE = 'Purchase',
-  WORKERS = 'Workers',
+  INVENTORY = 'Inventory & Stock',
   BILLING = 'Billing & Client Pay',
   GST = 'GST Dashboard',
   KHARCHI = 'Kharchi',
