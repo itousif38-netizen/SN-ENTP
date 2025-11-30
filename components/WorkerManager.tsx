@@ -109,6 +109,15 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
               newErrors.exitDate = "Exit Date cannot be before Joining Date.";
           }
       }
+
+      // Check for Duplicate Serial Number in the same project
+      const duplicateSerial = workers.some(w => 
+        w.projectId === formData.projectId && 
+        w.serialNo === Number(formData.serialNo) && 
+        w.id !== editingId
+      );
+      if (duplicateSerial) newErrors.serialNo = "Serial No already used in this project.";
+
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
   };

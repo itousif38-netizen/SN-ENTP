@@ -201,6 +201,14 @@ const BillingManager: React.FC<BillingManagerProps> = ({
     if (!formData.billingMonth) newErrors.billingMonth = "Billing Month is required.";
     if (!formData.certifyDate) newErrors.certifyDate = "Certify Date is required.";
     
+    // Check for duplicate Bill No within project
+    const duplicate = bills.some(b => 
+      b.projectId === formData.projectId && 
+      b.billNo.toLowerCase() === formData.billNo?.trim().toLowerCase() &&
+      b.id !== editingId
+    );
+    if (duplicate) newErrors.billNo = "Bill No already exists for this project.";
+
     setBillErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

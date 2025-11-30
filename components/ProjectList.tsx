@@ -145,6 +145,10 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
         }
     }
 
+    // Check for Duplicate Name
+    const duplicateName = projects.some(p => p.name.trim().toLowerCase() === formData.name?.trim().toLowerCase() && p.id !== editingId);
+    if (duplicateName) newErrors.name = "Project with this name already exists.";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -327,7 +331,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input 
             type="text"
-            placeholder="Search projects..."
+            placeholder="Search projects by name or address..."
             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

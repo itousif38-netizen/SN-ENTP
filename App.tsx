@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Menu, WifiOff } from 'lucide-react';
+import { Menu, WifiOff, RefreshCw, CheckCircle } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ProjectList from './components/ProjectList';
@@ -73,6 +73,16 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const isOnline = useOnlineStatus();
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync effect when coming back online
+  useEffect(() => {
+    if (isOnline) {
+      setIsSyncing(true);
+      const timer = setTimeout(() => setIsSyncing(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnline]);
 
   // PWA Install State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -413,6 +423,13 @@ function App() {
             <WifiOff size={16} className="text-orange-500" />
             <span>You are currently offline. Changes are saved locally and will sync when online.</span>
           </div>
+        )}
+        {/* Syncing Banner */}
+        {isOnline && isSyncing && (
+           <div className="bg-blue-600 text-white px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top z-50">
+             <RefreshCw size={16} className="animate-spin" />
+             <span>Syncing data...</span>
+           </div>
         )}
 
         {/* Mobile Header */}
