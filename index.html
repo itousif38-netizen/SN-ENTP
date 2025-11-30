@@ -6,14 +6,33 @@
     <title>SN Enterprise</title>
     <meta name="description" content="Construction Management System for SN Enterprise">
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#1b5e20">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f3f4f6;
+      :root {
+        --tally-teal: #007692;
+        --tally-teal-dark: #005f76;
+        --tally-yellow: #fcc200;
+        --tally-yellow-light: #fff8db;
+        --tally-bg: #f2f3f5;
+        --tally-text: #1f1f1f;
       }
+      body {
+        font-family: 'Roboto', 'Open Sans', sans-serif;
+        background-color: var(--tally-bg);
+        color: var(--tally-text);
+        font-size: 14px;
+      }
+      
+      /* Tally Specific Utility Classes */
+      .bg-tally-teal { background-color: var(--tally-teal); }
+      .bg-tally-teal-dark { background-color: var(--tally-teal-dark); }
+      .text-tally-teal { color: var(--tally-teal); }
+      .bg-tally-yellow { background-color: var(--tally-yellow); }
+      .bg-tally-yellow-light { background-color: var(--tally-yellow-light); }
+      .border-tally-yellow { border-color: var(--tally-yellow); }
+      
       /* Custom scrollbar for cleaner look */
       ::-webkit-scrollbar {
         width: 8px;
@@ -34,7 +53,7 @@
       @keyframes fadeInUp {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(10px);
         }
         to {
           opacity: 1;
@@ -42,48 +61,28 @@
         }
       }
 
-      @keyframes slideInRight {
-        from {
-          opacity: 0;
-          transform: translateX(-20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-
-      @keyframes scaleIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-
       .animate-fade-in-up {
-        animation: fadeInUp 0.5s ease-out forwards;
+        animation: fadeInUp 0.3s ease-out forwards;
       }
 
-      .animate-slide-in-right {
-        animation: slideInRight 0.4s ease-out forwards;
+      /* Table Styles Override for Tally Look */
+      table {
+        border-collapse: collapse;
       }
-
-      .animate-scale-in {
-        animation: scaleIn 0.3s ease-out forwards;
+      th {
+        background-color: #eef2f5 !important;
+        color: #1f1f1f !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid #cbd5e1;
       }
-      
-      .stagger-1 { animation-delay: 100ms; }
-      .stagger-2 { animation-delay: 200ms; }
-      .stagger-3 { animation-delay: 300ms; }
-      .stagger-4 { animation-delay: 400ms; }
-
-      /* Table Row Hover Animation */
-      tr.hover-row {
-        transition: background-color 0.2s ease, transform 0.1s ease;
+      tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+      tr:hover {
+        background-color: var(--tally-yellow-light) !important;
       }
 
       @media print {

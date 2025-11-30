@@ -1,7 +1,6 @@
-
 import React from 'react';
-import { LayoutDashboard, Users, FileText, CreditCard, Coins, Wallet, Calculator, Bot, X, HardHat, HandCoins, Building2, ShoppingCart, Layers, TrendingUp, Utensils, Percent, Database, LogOut, Smartphone, Wifi, WifiOff } from 'lucide-react';
 import { AppView } from '../types';
+import { X, ChevronRight } from 'lucide-react';
 
 interface SidebarProps {
   currentView: AppView;
@@ -19,27 +18,47 @@ const Sidebar: React.FC<SidebarProps> = ({
   onChangeView, 
   isMobileOpen, 
   setIsMobileOpen, 
-  onLogout,
   showInstallButton,
   onInstallClick,
-  isOnline = true
 }) => {
-  const menuItems = [
-    { id: AppView.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-    { id: AppView.PROJECTS, label: 'Projects', icon: HardHat },
-    { id: AppView.EXECUTION, label: 'Execution', icon: Layers },
-    { id: AppView.PURCHASE, label: 'Purchase', icon: ShoppingCart },
-    { id: AppView.WORKERS, label: 'Workers Mgmt', icon: Users },
-    { id: AppView.MESS, label: 'Mess Mgmt', icon: Utensils },
-    { id: AppView.BILLING, label: 'Billing & Client Pay', icon: FileText },
-    { id: AppView.GST, label: 'GST Dashboard', icon: Percent },
-    { id: AppView.KHARCHI, label: 'Kharchi (Sundays)', icon: Coins },
-    { id: AppView.ADVANCE, label: 'Worker Advances', icon: Wallet },
-    { id: AppView.WORKER_PAYMENT, label: 'Worker Payment', icon: HandCoins },
-    { id: AppView.EXPENSES, label: 'Expense Manager', icon: TrendingUp },
-    { id: AppView.ESTIMATOR, label: 'AI Estimator', icon: Calculator },
-    { id: AppView.ASSISTANT, label: 'Site Assistant', icon: Bot },
-    { id: AppView.BACKUP, label: 'Data Backup', icon: Database },
+  
+  // Grouping menu items for Tally-like structure
+  const menuGroups = [
+    {
+      title: 'Masters',
+      items: [
+        { id: AppView.DASHBOARD, label: 'Dashboard Overview' },
+        { id: AppView.PROJECTS, label: 'Projects (Sites)' },
+        { id: AppView.WORKERS, label: 'Worker Master' },
+        { id: AppView.EXECUTION, label: 'Execution Stages' },
+      ]
+    },
+    {
+      title: 'Transactions',
+      items: [
+        { id: AppView.BILLING, label: 'Billing Vouchers' },
+        { id: AppView.PURCHASE, label: 'Purchase Vouchers' },
+        { id: AppView.WORKER_PAYMENT, label: 'Worker Payment' },
+        { id: AppView.KHARCHI, label: 'Kharchi (Sundays)' },
+        { id: AppView.ADVANCE, label: 'Advance Payment' },
+        { id: AppView.MESS, label: 'Mess Management' },
+      ]
+    },
+    {
+      title: 'Reports',
+      items: [
+        { id: AppView.EXPENSES, label: 'Profit & Loss A/c' },
+        { id: AppView.GST, label: 'GST Reports' },
+      ]
+    },
+    {
+      title: 'Utilities',
+      items: [
+        { id: AppView.ESTIMATOR, label: 'AI Cost Estimator' },
+        { id: AppView.ASSISTANT, label: 'Site Assistant (AI)' },
+        { id: AppView.BACKUP, label: 'Data Backup' },
+      ]
+    }
   ];
 
   const handleNavClick = (view: AppView) => {
@@ -57,96 +76,68 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Container - Gateway of Tally Style */}
       <div className={`
-        fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:h-screen lg:flex lg:flex-col
+        fixed inset-y-0 left-0 z-30 w-72 bg-white text-slate-800 transform transition-transform duration-300 ease-in-out border-r border-slate-300 shadow-xl
+        lg:translate-x-0 lg:static lg:h-full lg:shadow-none flex flex-col
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Header */}
-        <div className="flex items-center justify-between h-24 px-6 bg-slate-950 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-             <div className="relative w-12 h-12 flex-shrink-0">
-                <svg viewBox="0 0 200 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M40 180 V 60 L 70 40 V 180" fill="#0ea5e9" />
-                  <path d="M75 180 V 20 L 125 10 V 180" fill="#0284c7" />
-                  <path d="M130 180 V 50 L 160 70 V 180" fill="#0ea5e9" />
-                  <circle cx="100" cy="100" r="70" stroke="white" strokeWidth="8" fill="none" />
-                  <text x="100" y="125" textAnchor="middle" fontFamily="sans-serif" fontWeight="900" fontSize="70" fill="white">SN</text>
-                  <path d="M 20 160 Q 100 220 180 140" stroke="#f97316" strokeWidth="10" fill="none" strokeLinecap="round" />
-                </svg>
-            </div>
-            <div className="leading-none">
-                <span className="block font-['Oswald'] font-bold text-5xl tracking-wide text-white">SN</span>
-                <span className="block font-['Oswald'] text-sm font-bold text-orange-500 tracking-widest">ENTERPRISE</span>
-            </div>
-          </div>
-          <button 
-            className="lg:hidden text-slate-400 hover:text-white"
+        {/* Gateway Header */}
+        <div className="h-12 bg-slate-100 border-b border-slate-300 flex items-center justify-between px-4 shrink-0">
+           <h2 className="font-bold text-sm uppercase tracking-wide text-slate-700">Gateway of SN</h2>
+           <button 
+            className="lg:hidden text-slate-500 hover:text-red-500"
             onClick={() => setIsMobileOpen(false)}
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`
-                  w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 text-sm
-                  ${isActive 
-                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' 
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
-                `}
-              >
-                <Icon size={18} />
-                <span className="font-medium">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* Menu Items */}
+        <div className="flex-1 overflow-y-auto py-2">
+            {menuGroups.map((group, groupIdx) => (
+                <div key={group.title} className="mb-4">
+                    <div className="px-4 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        {group.title}
+                    </div>
+                    <ul className="space-y-0.5">
+                        {group.items.map((item) => {
+                            const isActive = currentView === item.id;
+                            return (
+                                <li key={item.id}>
+                                    <button
+                                        onClick={() => handleNavClick(item.id)}
+                                        className={`
+                                            w-full text-left px-6 py-1.5 text-sm font-medium transition-colors relative flex items-center justify-between group
+                                            ${isActive 
+                                                ? 'bg-tally-yellow-light text-black font-bold' 
+                                                : 'text-slate-700 hover:bg-tally-yellow-light hover:text-black'}
+                                        `}
+                                    >
+                                        {/* Yellow selection bar on left */}
+                                        {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-tally-yellow"></div>}
+                                        
+                                        <span>{item.label}</span>
+                                        {isActive && <ChevronRight size={14} className="text-slate-400" />}
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            ))}
+        </div>
 
-        {/* User Profile / Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950 space-y-3">
-          {showInstallButton && onInstallClick && (
+        {/* Bottom Actions */}
+        <div className="p-2 border-t border-slate-300 bg-slate-50">
+           {showInstallButton && onInstallClick && (
             <button
               onClick={onInstallClick}
-              className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-blue-600 text-white py-2 rounded-lg transition-colors text-sm font-medium border border-slate-700 hover:border-blue-500"
+              className="w-full text-center py-2 bg-tally-teal text-white rounded text-xs font-bold hover:bg-tally-teal-dark uppercase"
             >
-               <Smartphone size={16} /> Install App
+              Install App
             </button>
           )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                 <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-orange-500 font-bold border border-slate-600 font-['Oswald']">
-                    TR
-                 </div>
-                 {/* Online Status Indicator */}
-                 <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-950 flex items-center justify-center ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}>
-                    {isOnline ? <Wifi size={8} className="text-white" /> : <WifiOff size={8} className="text-white" />}
-                 </div>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white">Tousif Reja</p>
-                <p className="text-xs text-slate-500">{isOnline ? 'Online' : 'Offline Mode'}</p>
-              </div>
-            </div>
-            <button 
-              onClick={onLogout}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut size={20} />
-            </button>
-          </div>
         </div>
       </div>
     </>

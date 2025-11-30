@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Menu, WifiOff, RefreshCw, CheckCircle } from 'lucide-react';
+import { Menu, WifiOff, RefreshCw, X, User, Settings, HelpCircle, LayoutGrid, Power } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ProjectList from './components/ProjectList';
@@ -89,9 +88,7 @@ function App() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: any) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
     };
 
@@ -104,11 +101,8 @@ function App() {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    // Show the install prompt
     deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
-    // We've used the prompt, and can't use it again, throw it away
     setDeferredPrompt(null);
   };
 
@@ -124,108 +118,35 @@ function App() {
   const [messEntries, setMessEntries] = usePersistentState<MessEntry[]>('sn_mess', MOCK_MESS_ENTRIES);
   const [workerPayments, setWorkerPayments] = usePersistentState<WorkerPaymentType[]>('sn_worker_payments', []);
 
-  // --- Add Handlers ---
-  const handleAddProject = (newProject: Project) => {
-    setProjects(prev => [...prev, newProject]);
-  };
+  // --- Handlers (CRUD operations remain same) ---
+  const handleAddProject = (newProject: Project) => setProjects(prev => [...prev, newProject]);
+  const handleAddWorker = (newWorker: Worker) => setWorkers(prev => [...prev, newWorker]);
+  const handleAddBill = (newBill: Bill) => setBills(prev => [...prev, newBill]);
+  const handleAddClientPayment = (newPayment: ClientPayment) => setClientPayments(prev => [...prev, newPayment]);
+  const handleAddAdvance = (newAdvance: AdvanceEntry) => setAdvances(prev => [...prev, newAdvance]);
+  const handleAddPurchase = (newPurchase: PurchaseEntry) => setPurchases(prev => [...prev, newPurchase]);
+  const handleAddExecution = (newExecution: ExecutionLevel) => setExecutionData(prev => [...prev, newExecution]);
+  const handleAddMess = (newMess: MessEntry) => setMessEntries(prev => [...prev, newMess]);
 
-  const handleAddWorker = (newWorker: Worker) => {
-    setWorkers(prev => [...prev, newWorker]);
-  };
+  const handleEditProject = (updatedProject: Project) => setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+  const handleEditWorker = (updatedWorker: Worker) => setWorkers(prev => prev.map(w => w.id === updatedWorker.id ? updatedWorker : w));
+  const handleEditBill = (updatedBill: Bill) => setBills(prev => prev.map(b => b.id === updatedBill.id ? updatedBill : b));
+  const handleEditClientPayment = (updatedPayment: ClientPayment) => setClientPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p));
+  const handleEditAdvance = (updatedAdvance: AdvanceEntry) => setAdvances(prev => prev.map(a => a.id === updatedAdvance.id ? updatedAdvance : a));
+  const handleEditPurchase = (updatedPurchase: PurchaseEntry) => setPurchases(prev => prev.map(p => p.id === updatedPurchase.id ? updatedPurchase : p));
+  const handleUpdateExecution = (updatedEntry: ExecutionLevel) => setExecutionData(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
+  const handleEditMess = (updatedMess: MessEntry) => setMessEntries(prev => prev.map(m => m.id === updatedMess.id ? updatedMess : m));
 
-  const handleAddBill = (newBill: Bill) => {
-    setBills(prev => [...prev, newBill]);
-  };
+  const handleDeleteProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
+  const handleDeleteWorker = (id: string) => setWorkers(prev => prev.filter(w => w.id !== id));
+  const handleDeleteBill = (id: string) => setBills(prev => prev.filter(b => b.id !== id));
+  const handleDeleteClientPayment = (id: string) => setClientPayments(prev => prev.filter(p => p.id !== id));
+  const handleDeleteAdvance = (id: string) => setAdvances(prev => prev.filter(a => a.id !== id));
+  const handleDeletePurchase = (id: string) => setPurchases(prev => prev.filter(p => p.id !== id));
+  const handleDeleteExecution = (id: string) => setExecutionData(prev => prev.filter(e => e.id !== id));
+  const handleDeleteMess = (id: string) => setMessEntries(prev => prev.filter(m => m.id !== id));
 
-  const handleAddClientPayment = (newPayment: ClientPayment) => {
-    setClientPayments(prev => [...prev, newPayment]);
-  };
-
-  const handleAddAdvance = (newAdvance: AdvanceEntry) => {
-    setAdvances(prev => [...prev, newAdvance]);
-  };
-
-  const handleAddPurchase = (newPurchase: PurchaseEntry) => {
-    setPurchases(prev => [...prev, newPurchase]);
-  };
-  
-  const handleAddExecution = (newExecution: ExecutionLevel) => {
-    setExecutionData(prev => [...prev, newExecution]);
-  };
-
-  const handleAddMess = (newMess: MessEntry) => {
-    setMessEntries(prev => [...prev, newMess]);
-  };
-
-  // --- Edit Handlers ---
-  const handleEditProject = (updatedProject: Project) => {
-    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-  };
-
-  const handleEditWorker = (updatedWorker: Worker) => {
-    setWorkers(prev => prev.map(w => w.id === updatedWorker.id ? updatedWorker : w));
-  };
-
-  const handleEditBill = (updatedBill: Bill) => {
-    setBills(prev => prev.map(b => b.id === updatedBill.id ? updatedBill : b));
-  };
-
-  const handleEditClientPayment = (updatedPayment: ClientPayment) => {
-    setClientPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p));
-  };
-
-  const handleEditAdvance = (updatedAdvance: AdvanceEntry) => {
-    setAdvances(prev => prev.map(a => a.id === updatedAdvance.id ? updatedAdvance : a));
-  };
-
-  const handleEditPurchase = (updatedPurchase: PurchaseEntry) => {
-    setPurchases(prev => prev.map(p => p.id === updatedPurchase.id ? updatedPurchase : p));
-  };
-  
-  const handleUpdateExecution = (updatedEntry: ExecutionLevel) => {
-    setExecutionData(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
-  };
-
-  const handleEditMess = (updatedMess: MessEntry) => {
-    setMessEntries(prev => prev.map(m => m.id === updatedMess.id ? updatedMess : m));
-  };
-
-  // --- Delete Handlers ---
-  const handleDeleteProject = (id: string) => {
-    setProjects(prev => prev.filter(p => p.id !== id));
-  };
-
-  const handleDeleteWorker = (id: string) => {
-    setWorkers(prev => prev.filter(w => w.id !== id));
-  };
-
-  const handleDeleteBill = (id: string) => {
-    setBills(prev => prev.filter(b => b.id !== id));
-  };
-
-  const handleDeleteClientPayment = (id: string) => {
-    setClientPayments(prev => prev.filter(p => p.id !== id));
-  };
-
-  const handleDeleteAdvance = (id: string) => {
-    setAdvances(prev => prev.filter(a => a.id !== id));
-  };
-
-  const handleDeletePurchase = (id: string) => {
-    setPurchases(prev => prev.filter(p => p.id !== id));
-  };
-  
-  const handleDeleteExecution = (id: string) => {
-    setExecutionData(prev => prev.filter(e => e.id !== id));
-  };
-
-  const handleDeleteMess = (id: string) => {
-    setMessEntries(prev => prev.filter(m => m.id !== id));
-  };
-
-  // --- Bulk Update Handlers ---
   const handleUpdateKharchi = (entries: KharchiEntry[]) => {
-    // Merge new entries with existing ones (update if exists, add if new)
     setKharchi(prev => {
         const otherEntries = prev.filter(p => !entries.some(e => e.id === p.id));
         return [...otherEntries, ...entries];
@@ -234,7 +155,6 @@ function App() {
 
   const handleSaveWorkerPayments = (records: WorkerPaymentType[]) => {
     setWorkerPayments(prev => {
-        // Remove existing records for the same month/worker to prevent duplicates
         const filtered = prev.filter(p => !records.some(r => r.workerId === p.workerId && r.month === p.month));
         return [...filtered, ...records];
     });
@@ -270,186 +190,105 @@ function App() {
 
   const renderView = () => {
     switch (currentView) {
-      case AppView.DASHBOARD:
-        return <Dashboard projects={projects} />;
-      case AppView.PROJECTS:
-        return (
-          <ProjectList 
-            projects={projects} 
-            onAddProject={handleAddProject} 
-            onEditProject={handleEditProject}
-            onDeleteProject={handleDeleteProject}
-          />
-        );
-      case AppView.WORKERS:
-        return (
-          <WorkerManager 
-            workers={workers} 
-            projects={projects} 
-            onAddWorker={handleAddWorker}
-            onEditWorker={handleEditWorker}
-            onDeleteWorker={handleDeleteWorker}
-          />
-        );
-      case AppView.BILLING:
-        return (
-          <BillingManager 
-            projects={projects} 
-            bills={bills} 
-            clientPayments={clientPayments}
-            onAddBill={handleAddBill} 
-            onEditBill={handleEditBill}
-            onDeleteBill={handleDeleteBill}
-            onAddPayment={handleAddClientPayment}
-            onEditPayment={handleEditClientPayment}
-            onDeletePayment={handleDeleteClientPayment}
-          />
-        );
-      case AppView.KHARCHI:
-        return (
-          <KharchiTracker 
-            projects={projects} 
-            workers={workers} 
-            kharchi={kharchi} 
-            onUpdateKharchi={handleUpdateKharchi} 
-          />
-        );
-      case AppView.ADVANCE:
-        return (
-          <AdvanceTracker 
-            projects={projects} 
-            workers={workers} 
-            advances={advances}
-            onAddAdvance={handleAddAdvance}
-            onEditAdvance={handleEditAdvance}
-            onDeleteAdvance={handleDeleteAdvance}
-          />
-        );
-      case AppView.WORKER_PAYMENT:
-        return (
-          <WorkerPayment 
-            projects={projects} 
-            workers={workers} 
-            kharchi={kharchi} 
-            advances={advances}
-            onSavePaymentRecord={handleSaveWorkerPayments}
-          />
-        );
-      case AppView.EXPENSES:
-        return (
-          <ExpenseManager 
-            projects={projects}
-            purchases={purchases}
-            kharchi={kharchi}
-            advances={advances}
-            clientPayments={clientPayments}
-            workerPayments={workerPayments}
-            messEntries={messEntries}
-            bills={bills}
-          />
-        );
-      case AppView.PURCHASE:
-        return (
-          <PurchaseManager 
-            projects={projects}
-            purchases={purchases}
-            onAddPurchase={handleAddPurchase}
-            onEditPurchase={handleEditPurchase}
-            onDeletePurchase={handleDeletePurchase}
-          />
-        );
-      case AppView.EXECUTION:
-        return (
-          <ExecutionTracker 
-            projects={projects}
-            executionData={executionData}
-            onAddExecution={handleAddExecution}
-            onUpdateExecution={handleUpdateExecution}
-            onDeleteExecution={handleDeleteExecution}
-          />
-        );
-      case AppView.MESS:
-        return (
-          <MessManager 
-            projects={projects}
-            messEntries={messEntries}
-            onAddMess={handleAddMess}
-            onEditMess={handleEditMess}
-            onDeleteMess={handleDeleteMess}
-          />
-        );
-      case AppView.GST:
-        return (
-          <GSTDashboard 
-            projects={projects}
-            bills={bills}
-          />
-        );
-      case AppView.ESTIMATOR:
-        return <AIEstimator />;
-      case AppView.ASSISTANT:
-        return <AIChat />;
-      case AppView.BACKUP:
-        return (
-          <DataBackup 
-            currentData={{
-              projects, workers, bills, clientPayments, kharchi, advances, purchases, executionData, messEntries, workerPayments
-            }}
-            onRestore={handleRestoreData}
-          />
-        );
-      default:
-        return <Dashboard projects={projects} />;
+      case AppView.DASHBOARD: return <Dashboard projects={projects} />;
+      case AppView.PROJECTS: return <ProjectList projects={projects} onAddProject={handleAddProject} onEditProject={handleEditProject} onDeleteProject={handleDeleteProject} />;
+      case AppView.WORKERS: return <WorkerManager workers={workers} projects={projects} onAddWorker={handleAddWorker} onEditWorker={handleEditWorker} onDeleteWorker={handleDeleteWorker} />;
+      case AppView.BILLING: return <BillingManager projects={projects} bills={bills} clientPayments={clientPayments} onAddBill={handleAddBill} onEditBill={handleEditBill} onDeleteBill={handleDeleteBill} onAddPayment={handleAddClientPayment} onEditPayment={handleEditClientPayment} onDeletePayment={handleDeleteClientPayment} />;
+      case AppView.KHARCHI: return <KharchiTracker projects={projects} workers={workers} kharchi={kharchi} onUpdateKharchi={handleUpdateKharchi} />;
+      case AppView.ADVANCE: return <AdvanceTracker projects={projects} workers={workers} advances={advances} onAddAdvance={handleAddAdvance} onEditAdvance={handleEditAdvance} onDeleteAdvance={handleDeleteAdvance} />;
+      case AppView.WORKER_PAYMENT: return <WorkerPayment projects={projects} workers={workers} kharchi={kharchi} advances={advances} onSavePaymentRecord={handleSaveWorkerPayments} />;
+      case AppView.EXPENSES: return <ExpenseManager projects={projects} purchases={purchases} kharchi={kharchi} advances={advances} clientPayments={clientPayments} workerPayments={workerPayments} messEntries={messEntries} bills={bills} />;
+      case AppView.PURCHASE: return <PurchaseManager projects={projects} purchases={purchases} onAddPurchase={handleAddPurchase} onEditPurchase={handleEditPurchase} onDeletePurchase={handleDeletePurchase} />;
+      case AppView.EXECUTION: return <ExecutionTracker projects={projects} executionData={executionData} onAddExecution={handleAddExecution} onUpdateExecution={handleUpdateExecution} onDeleteExecution={handleDeleteExecution} />;
+      case AppView.MESS: return <MessManager projects={projects} messEntries={messEntries} onAddMess={handleAddMess} onEditMess={handleEditMess} onDeleteMess={handleDeleteMess} />;
+      case AppView.GST: return <GSTDashboard projects={projects} bills={bills} />;
+      case AppView.ESTIMATOR: return <AIEstimator />;
+      case AppView.ASSISTANT: return <AIChat />;
+      case AppView.BACKUP: return <DataBackup currentData={{ projects, workers, bills, clientPayments, kharchi, advances, purchases, executionData, messEntries, workerPayments }} onRestore={handleRestoreData} />;
+      default: return <Dashboard projects={projects} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-['Inter']">
-      <Sidebar 
-        currentView={currentView} 
-        onChangeView={setCurrentView} 
-        isMobileOpen={isMobileMenuOpen}
-        setIsMobileOpen={setIsMobileMenuOpen}
-        onLogout={handleLogout}
-        showInstallButton={!!deferredPrompt}
-        onInstallClick={handleInstallClick}
-        isOnline={isOnline}
-      />
-
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* Offline Banner */}
-        {!isOnline && (
-          <div className="bg-slate-800 text-white px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top z-50">
-            <WifiOff size={16} className="text-orange-500" />
-            <span>You are currently offline. Changes are saved locally and will sync when online.</span>
-          </div>
-        )}
-        {/* Syncing Banner */}
-        {isOnline && isSyncing && (
-           <div className="bg-blue-600 text-white px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top z-50">
-             <RefreshCw size={16} className="animate-spin" />
-             <span>Syncing data...</span>
-           </div>
-        )}
-
-        {/* Mobile Header */}
-        <header className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between z-10">
+    <div className="flex flex-col h-screen bg-[#f2f3f5] font-['Roboto'] overflow-hidden">
+      {/* Tally Prime Style Top Bar */}
+      <div className="h-12 bg-tally-teal flex items-center justify-between px-4 shadow-md z-50 text-white shrink-0">
+        <div className="flex items-center gap-4">
           <button 
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="text-slate-600 hover:text-slate-900"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden text-white hover:bg-white/10 p-1 rounded"
           >
-            <Menu size={24} />
+            <Menu size={20} />
           </button>
-          <div className="text-xl font-['Oswald'] font-black tracking-wide text-slate-900">
-             SN <span className="text-orange-600">ENTERPRISE</span>
+          
+          <div className="flex items-center gap-3">
+             <div className="font-bold text-lg tracking-wide border-r border-white/30 pr-4">SN ENTERPRISE</div>
+             <div className="hidden md:flex text-sm text-white/90 gap-4">
+                 <span className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded">K: Company</span>
+                 <span className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded">Y: Data</span>
+                 <span className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded">Z: Exchange</span>
+             </div>
           </div>
-          <div className="w-6"></div>
-        </header>
+        </div>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 animate-fade-in-up">
-          <div className="max-w-7xl mx-auto pb-10">
-            {renderView()}
+        <div className="flex items-center gap-3">
+           {!isOnline && (
+              <div className="bg-red-600 px-3 py-1 rounded text-xs font-bold flex items-center gap-1">
+                <WifiOff size={12} /> Offline
+              </div>
+           )}
+           {isOnline && isSyncing && (
+              <div className="bg-blue-600 px-3 py-1 rounded text-xs font-bold flex items-center gap-1 animate-pulse">
+                <RefreshCw size={12} className="animate-spin" /> Syncing
+              </div>
+           )}
+           
+           <div className="h-6 w-px bg-white/30 mx-1"></div>
+           
+           <button title="Settings" className="p-1.5 hover:bg-white/10 rounded"><Settings size={18} /></button>
+           <button title="Help" className="p-1.5 hover:bg-white/10 rounded"><HelpCircle size={18} /></button>
+           <button 
+            onClick={handleLogout}
+            title="Quit" 
+            className="p-1.5 hover:bg-red-600 rounded flex items-center gap-1 text-xs uppercase font-bold"
+           >
+             <Power size={16} /> <span className="hidden sm:inline">Quit</span>
+           </button>
+        </div>
+      </div>
+
+      {/* Main Layout Area */}
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar 
+          currentView={currentView} 
+          onChangeView={setCurrentView} 
+          isMobileOpen={isMobileMenuOpen}
+          setIsMobileOpen={setIsMobileMenuOpen}
+          onLogout={handleLogout}
+          showInstallButton={!!deferredPrompt}
+          onInstallClick={handleInstallClick}
+          isOnline={isOnline}
+        />
+
+        {/* Content Wrapper */}
+        <main className="flex-1 overflow-hidden relative flex flex-col">
+          {/* Yellow Line below header (Tally Accent) */}
+          <div className="h-1 bg-tally-yellow w-full shrink-0"></div>
+          
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-[#f2f3f5]">
+            <div className="max-w-[1600px] mx-auto min-h-full">
+              {renderView()}
+            </div>
+          </div>
+          
+          {/* Tally Bottom Status Bar */}
+          <div className="h-6 bg-tally-teal-dark text-white text-[10px] flex items-center px-2 justify-between shrink-0">
+             <div>SN Enterprise Construction Manager v2.0</div>
+             <div className="flex gap-4">
+                <span>ODBC Server: Running</span>
+                <span>Port: 9000</span>
+                <span>Ctrl+M: Email</span>
+             </div>
           </div>
         </main>
       </div>
