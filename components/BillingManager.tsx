@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Project, Bill, ClientPayment } from '../types';
-import { FileText, DollarSign, Plus, IndianRupee, Pencil, Trash2, X, Save, Calendar, Percent, Filter } from 'lucide-react';
+import { FileText, DollarSign, Plus, IndianRupee, Pencil, Trash2, X, Save, Calendar, Percent, Filter, Search } from 'lucide-react';
 
 interface BillingManagerProps {
   projects: Project[];
@@ -31,6 +32,7 @@ const BillingManager: React.FC<BillingManagerProps> = ({
 
   // Filter State
   const [selectedBillMonth, setSelectedBillMonth] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // State for Managing Client Payments
   const [managingProjectId, setManagingProjectId] = useState<string | null>(null);
@@ -56,8 +58,25 @@ const BillingManager: React.FC<BillingManagerProps> = ({
 
   // Filter Logic
   const filteredBills = bills.filter(b => {
-    if (!selectedBillMonth) return true;
-    return b.billingMonth === selectedBillMonth;
+    // 1. Month Filter
+    if (selectedBillMonth && b.billingMonth !== selectedBillMonth) {
+      return false;
+    }
+
+    // 2. Search Filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const projectName = projects.find(p => p.id === b.projectId)?.name.toLowerCase() || '';
+      
+      const matchesSearch = 
+        b.billNo.toLowerCase().includes(searchLower) ||
+        b.workNature.toLowerCase().includes(searchLower) ||
+        projectName.includes(searchLower);
+
+      if (!matchesSearch) return false;
+    }
+
+    return true;
   });
 
   // 3. Billing Management - Analytics
@@ -383,25 +402,39 @@ const BillingManager: React.FC<BillingManagerProps> = ({
            </div>
 
            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 overflow-auto max-h-[800px]">
-             <div className="flex justify-between items-center mb-4">
+             <div className="flex flex-col mb-4 gap-3">
                  <h3 className="font-semibold">Recent Individual Bills</h3>
-                 <div className="flex flex-col items-end gap-1">
-                     <label className="text-xs text-slate-500 font-medium">Filter Month</label>
-                     <div className="flex items-center gap-1">
+                 
+                 <div className="flex gap-2 items-center">
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Search Bill No, Project..." 
+                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    
+                    {/* Month Filter */}
+                    <div className="flex items-center gap-1">
                          <input 
                             type="month" 
-                            className="text-xs p-1 border rounded"
+                            className="text-sm p-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 w-32"
                             value={selectedBillMonth}
                             onChange={(e) => setSelectedBillMonth(e.target.value)}
                          />
                          {selectedBillMonth && (
-                             <button onClick={() => setSelectedBillMonth('')} className="text-xs text-slate-400 hover:text-slate-800">
-                                 <X size={14} />
+                             <button onClick={() => setSelectedBillMonth('')} className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded">
+                                 <X size={16} />
                              </button>
                          )}
                      </div>
                  </div>
              </div>
+             
              <table className="w-full text-sm text-left">
                <thead className="bg-slate-50">
                  <tr>
@@ -451,7 +484,7 @@ const BillingManager: React.FC<BillingManagerProps> = ({
                    </tr>
                  ))}
                  {filteredBills.length === 0 && (
-                     <tr><td colSpan={6} className="p-4 text-center text-slate-400">No bills found for the selected month.</td></tr>
+                     <tr><td colSpan={6} className="p-4 text-center text-slate-400">No bills found matching your filters.</td></tr>
                  )}
                </tbody>
              </table>
