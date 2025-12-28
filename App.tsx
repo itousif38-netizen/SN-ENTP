@@ -161,9 +161,6 @@ function App() {
   };
 
   const handleUpdateAttendance = (entries: AttendanceRecord[]) => {
-    // We replace records based on logic handled inside AttendanceTracker, but here we just set the state
-    // To be safe, filter out any overlapping IDs from previous state if needed, though Tracker handles it.
-    // Simpler approach: Filter out records that are being updated, then append new ones.
     setAttendance(entries);
   };
 
@@ -206,7 +203,15 @@ function App() {
 
   const renderView = () => {
     switch (currentView) {
-      case AppView.DASHBOARD: return <Dashboard projects={projects} />;
+      case AppView.DASHBOARD: return (
+        <Dashboard 
+          projects={projects} 
+          workers={workers} 
+          attendance={attendance} 
+          bills={bills} 
+          purchases={purchases} 
+        />
+      );
       case AppView.PROJECTS: return <ProjectList projects={projects} onAddProject={handleAddProject} onEditProject={handleEditProject} onDeleteProject={handleDeleteProject} />;
       case AppView.WORKERS: return <WorkerManager workers={workers} projects={projects} onAddWorker={handleAddWorker} onEditWorker={handleEditWorker} onDeleteWorker={handleDeleteWorker} />;
       case AppView.ATTENDANCE: return <AttendanceTracker projects={projects} workers={workers} attendance={attendance} onUpdateAttendance={handleUpdateAttendance} />;
@@ -223,7 +228,7 @@ function App() {
       case AppView.ESTIMATOR: return <AIEstimator />;
       case AppView.ASSISTANT: return <AIChat />;
       case AppView.BACKUP: return <DataBackup currentData={{ projects, workers, bills, clientPayments, kharchi, advances, purchases, executionData, messEntries, workerPayments, attendance, consumption }} onRestore={handleRestoreData} />;
-      default: return <Dashboard projects={projects} />;
+      default: return <Dashboard projects={projects} workers={workers} attendance={attendance} bills={bills} purchases={purchases} />;
     }
   };
 
