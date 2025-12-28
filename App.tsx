@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Menu, WifiOff, RefreshCw, Settings, Bell, Search, UserCircle, ChevronDown } from 'lucide-react';
+import { Menu, WifiOff, RefreshCw, Settings, Bell, Search, UserCircle, ChevronDown, Sparkles } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ProjectList from './components/ProjectList';
@@ -123,7 +123,7 @@ function App() {
   const [attendance, setAttendance] = usePersistentState<AttendanceRecord[]>('sn_attendance', MOCK_ATTENDANCE);
   const [consumption, setConsumption] = usePersistentState<StockConsumption[]>('sn_consumption', MOCK_STOCK_CONSUMPTION);
 
-  // --- Handlers (CRUD operations remain same) ---
+  // --- Handlers ---
   const handleAddProject = (newProject: Project) => setProjects(prev => [...prev, newProject]);
   const handleAddWorker = (newWorker: Worker) => setWorkers(prev => [...prev, newWorker]);
   const handleAddBill = (newBill: Bill) => setBills(prev => [...prev, newBill]);
@@ -261,8 +261,11 @@ function App() {
                  
                  {/* Breadcrumbs / Page Title (Contextual) */}
                  <div className="hidden md:flex flex-col">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">SN Enterprise</span>
-                    <h2 className="text-sm font-bold text-slate-800">{currentView}</h2>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">SN Enterprise</span>
+                    <div className="flex items-center gap-2">
+                       <h2 className="text-sm font-black text-slate-800 tracking-tight">{currentView}</h2>
+                       {currentView === AppView.DASHBOARD && <Sparkles size={14} className="text-blue-500" />}
+                    </div>
                  </div>
              </div>
 
@@ -274,36 +277,36 @@ function App() {
                     <Search size={14} className="absolute left-3 text-slate-400" />
                     <input 
                       type="text" 
-                      placeholder="Search..." 
-                      className="bg-slate-100 border-none rounded-full py-1.5 pl-9 pr-4 text-xs font-medium focus:ring-2 focus:ring-blue-500 w-48 transition-all focus:w-64"
+                      placeholder="Find site, worker or invoice..." 
+                      className="bg-slate-100 border-none rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:ring-2 focus:ring-blue-500 w-48 transition-all focus:w-64"
                     />
                 </div>
 
                 {!isOnline && (
-                    <div className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-red-100 animate-pulse">
-                      <WifiOff size={12} /> <span className="hidden sm:inline">Offline</span>
+                    <div className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 border border-red-100 animate-pulse">
+                      <WifiOff size={12} /> <span className="hidden sm:inline">OFFLINE MODE</span>
                     </div>
                 )}
                 {isOnline && isSyncing && (
-                    <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-blue-100">
-                      <RefreshCw size={12} className="animate-spin" /> <span className="hidden sm:inline">Syncing</span>
+                    <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 border border-blue-100">
+                      <RefreshCw size={12} className="animate-spin" /> <span className="hidden sm:inline">SYNCING DATA</span>
                     </div>
                 )}
 
                 <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-                <button className="relative text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                <button className="relative text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors">
                     <Bell size={20} />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                 </button>
                 
-                <div className="flex items-center gap-2 pl-2 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition-colors">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-slate-700 to-slate-900 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                <div className="flex items-center gap-2 pl-2 cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-colors group">
+                    <div className="w-8 h-8 bg-gradient-to-tr from-slate-700 to-slate-900 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm">
                         AD
                     </div>
                     <div className="hidden sm:flex flex-col items-start">
-                        <span className="text-xs font-bold text-slate-700 leading-tight">Admin User</span>
-                        <span className="text-[10px] text-slate-400">Superintendent</span>
+                        <span className="text-xs font-bold text-slate-700 leading-tight group-hover:text-blue-600 transition-colors">Admin User</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Site Superintendent</span>
                     </div>
                     <ChevronDown size={14} className="text-slate-400 hidden sm:block" />
                 </div>

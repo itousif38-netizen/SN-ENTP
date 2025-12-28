@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Project, ProjectStatus } from '../types';
-import { MapPin, Calendar, IndianRupee, Search, Plus, Flag, Pencil, Trash2, Percent, FileSpreadsheet, ArrowUp, ArrowDown, Building2 } from 'lucide-react';
+import { MapPin, Calendar, IndianRupee, Search, Plus, Flag, Pencil, Trash2, Percent, FileSpreadsheet, ArrowUp, ArrowDown, Building2, AlertCircle } from 'lucide-react';
 
 interface ProjectListProps {
   projects: Project[];
@@ -34,7 +35,6 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     completionPercentage: 0
   });
 
-  // Helper for Status Styling (Refined)
   const getStatusStyles = (status: ProjectStatus | string) => {
     switch (status) {
       case ProjectStatus.COMPLETED:
@@ -50,13 +50,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     }
   };
 
-  // 1. Filter
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 2. Sort
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     const aValue = a[sortConfig.key];
     const bValue = b[sortConfig.key];
@@ -125,14 +123,51 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name?.trim()) newErrors.name = "Project Name is required.";
-    if (!formData.address?.trim()) newErrors.address = "Address is required.";
-    if (!formData.startDate) newErrors.startDate = "Start Date is required.";
-    if (!formData.budget || Number(formData.budget) <= 0) newErrors.budget = "Valid budget required.";
     
-    // Check for Duplicate Name
-    const duplicateName = projects.some(p => p.name.trim().toLowerCase() === formData.name?.trim().toLowerCase() && p.id !== editingId);
-    if (duplicateName) newErrors.name = "Project name already exists.";
+    // Name validation
+    if (!formData.name?.trim()) {
+      newErrors.name = "Project name is required.";
+    } else if (formData.name.length < 3) {
+      newErrors.name = "Project name must be at least 3 characters.";
+    } else {
+      // Check for Duplicate Name
+      const duplicateName = projects.some(p => p.name.trim().toLowerCase() === formData.name?.trim().toLowerCase() && p.id !== editingId);
+      if (duplicateName) newErrors.name = "A project with this name already exists.";
+    }
+
+    // Address validation
+    if (!formData.address?.trim()) {
+      newErrors.address = "Project address is required.";
+    } else if (formData.address.length < 5) {
+      newErrors.address = "Please provide a more detailed address.";
+    }
+
+    // Start Date validation
+    if (!formData.startDate) {
+      newErrors.startDate = "Start date is mandatory.";
+    }
+
+    // Date Logic validation
+    if (formData.startDate && formData.completionDate) {
+      if (new Date(formData.completionDate) < new Date(formData.startDate)) {
+        newErrors.completionDate = "Completion date cannot be before the start date.";
+      }
+    }
+
+    // Budget validation
+    if (formData.budget === undefined || formData.budget === null || String(formData.budget) === '') {
+      newErrors.budget = "Total budget is required.";
+    } else if (Number(formData.budget) <= 0) {
+      newErrors.budget = "Budget must be a positive number greater than zero.";
+    }
+
+    // Progress validation
+    if (formData.completionPercentage !== undefined) {
+      const val = Number(formData.completionPercentage);
+      if (val < 0 || val > 100) {
+        newErrors.completionPercentage = "Progress must be between 0 and 100.";
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -142,26 +177,24 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
     e.preventDefault();
     if (!validateForm()) return;
 
-    if (formData.name && formData.budget) {
-      const projectPayload: Project = {
-          id: editingId || Date.now().toString(),
-          name: formData.name!,
-          projectCode: formData.projectCode || '',
-          startDate: formData.startDate || '',
-          completionDate: formData.completionDate || '',
-          address: formData.address || '',
-          budget: Number(formData.budget),
-          status: formData.status || ProjectStatus.PLANNING,
-          client: formData.client || '',
-          completionPercentage: Number(formData.completionPercentage || 0),
-          spent: editingId ? projects.find(p => p.id === editingId)?.spent : 0,
-      };
+    const projectPayload: Project = {
+        id: editingId || Date.now().toString(),
+        name: formData.name!.trim(),
+        projectCode: formData.projectCode?.trim() || '',
+        startDate: formData.startDate || '',
+        completionDate: formData.completionDate || '',
+        address: formData.address?.trim() || '',
+        budget: Number(formData.budget),
+        status: formData.status || ProjectStatus.PLANNING,
+        client: formData.client || '',
+        completionPercentage: Number(formData.completionPercentage || 0),
+        spent: editingId ? projects.find(p => p.id === editingId)?.spent : 0,
+    };
 
-      if (editingId) onEditProject(projectPayload);
-      else onAddProject(projectPayload);
-      
-      resetForm();
-    }
+    if (editingId) onEditProject(projectPayload);
+    else onAddProject(projectPayload);
+    
+    resetForm();
   };
 
   return (
@@ -198,18 +231,25 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
             <h3 className="text-lg font-bold text-slate-800">{editingId ? 'Edit Project Details' : 'Create New Project'}</h3>
             <button type="button" onClick={resetForm} className="text-slate-400 hover:text-slate-600 text-sm">Close</button>
           </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Project Name */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Project Name</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Project Name *</label>
               <input 
                 type="text"
-                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.name ? 'border-red-500' : 'border-slate-300'}`}
+                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.name ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
                 value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
+                onChange={e => {
+                  setFormData({...formData, name: e.target.value});
+                  if (errors.name) setErrors({...errors, name: ''});
+                }}
                 placeholder="e.g. Skyline Towers"
               />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+              {errors.name && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium"><AlertCircle size={12} /> {errors.name}</p>}
             </div>
+
+            {/* Project Code */}
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Project Code</label>
               <input 
@@ -220,6 +260,8 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
                 onChange={e => setFormData({...formData, projectCode: e.target.value})}
               />
             </div>
+
+            {/* Status */}
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Current Status</label>
               <select
@@ -233,44 +275,70 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, onAddProject, onEdi
                 <option value={ProjectStatus.COMPLETED}>Completed</option>
               </select>
             </div>
+
+            {/* Site Address */}
             <div className="md:col-span-2 lg:col-span-3">
-              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Site Address</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Site Address *</label>
               <input 
                 type="text"
-                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.address ? 'border-red-500' : 'border-slate-300'}`}
+                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.address ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
                 value={formData.address}
-                onChange={e => setFormData({...formData, address: e.target.value})}
+                onChange={e => {
+                  setFormData({...formData, address: e.target.value});
+                  if (errors.address) setErrors({...errors, address: ''});
+                }}
                 placeholder="Full street address"
               />
-              {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+              {errors.address && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium"><AlertCircle size={12} /> {errors.address}</p>}
             </div>
+
+            {/* Dates */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Start Date</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Start Date *</label>
               <input 
                 type="date"
-                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.startDate ? 'border-red-500' : 'border-slate-300'}`}
+                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.startDate ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
                 value={formData.startDate}
-                onChange={e => setFormData({...formData, startDate: e.target.value})}
+                onChange={e => {
+                  setFormData({...formData, startDate: e.target.value});
+                  if (errors.startDate) setErrors({...errors, startDate: ''});
+                }}
               />
+              {errors.startDate && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium"><AlertCircle size={12} /> {errors.startDate}</p>}
             </div>
+
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Est. Completion</label>
               <input 
                 type="date"
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm"
+                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.completionDate ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
                 value={formData.completionDate}
-                onChange={e => setFormData({...formData, completionDate: e.target.value})}
+                onChange={e => {
+                  setFormData({...formData, completionDate: e.target.value});
+                  if (errors.completionDate) setErrors({...errors, completionDate: ''});
+                }}
               />
+              {errors.completionDate && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium"><AlertCircle size={12} /> {errors.completionDate}</p>}
             </div>
+
+            {/* Budget */}
              <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Total Budget (₹)</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Total Budget (₹) *</label>
               <input 
                 type="number"
-                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.budget ? 'border-red-500' : 'border-slate-300'}`}
-                value={formData.budget}
-                onChange={e => setFormData({...formData, budget: Number(e.target.value)})}
+                step="any"
+                className={`w-full p-2.5 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm ${errors.budget ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+                value={formData.budget === 0 ? '' : formData.budget}
+                onChange={e => {
+                  setFormData({...formData, budget: e.target.value === '' ? undefined : Number(e.target.value)});
+                  if (errors.budget) setErrors({...errors, budget: ''});
+                }}
+                placeholder="0.00"
               />
+              {errors.budget && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium"><AlertCircle size={12} /> {errors.budget}</p>}
             </div>
+
+            {/* Form Actions */}
             <div className="md:col-span-2 lg:col-span-3 flex justify-end gap-3 pt-4 border-t border-slate-100 mt-2">
                 <button type="button" onClick={resetForm} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium">Cancel</button>
                 <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 text-sm font-medium">

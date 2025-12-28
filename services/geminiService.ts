@@ -1,30 +1,12 @@
 
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { EstimateItem } from "../types";
 
-// Safe API Key retrieval that works for Vite (import.meta.env) and Create React App (process.env)
-const getApiKey = () => {
-  try {
-    // Check for Vite env
-    if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_API_KEY) {
-      return (import.meta as any).env.VITE_API_KEY;
-    }
-    // Check for standard process.env (Create React App or Node)
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env.REACT_APP_API_KEY || process.env.API_KEY;
-    }
-  } catch (e) {
-    console.warn("Could not retrieve API Key from environment.");
-  }
-  return "";
-};
+// Always use process.env.API_KEY exclusively.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const apiKey = getApiKey();
-
-// Initialize the Gemini client only if key exists, otherwise we'll handle errors gracefully later
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-const estimateSchema: Schema = {
+// The responseSchema must use object literals as per guidelines.
+const estimateSchema = {
   type: Type.OBJECT,
   properties: {
     items: {
@@ -40,25 +22,20 @@ const estimateSchema: Schema = {
         },
         required: ["description", "quantity", "unit", "unitPrice", "total"]
       }
-    },
-    currency: { type: Type.STRING }
+    }
   },
   required: ["items"]
 };
 
+// Use gemini-3-pro-preview for complex reasoning tasks like cost estimation.
 export const generateConstructionEstimate = async (projectDescription: string): Promise<EstimateItem[]> => {
   if (!navigator.onLine) {
     throw new Error("You are currently offline. Please connect to the internet to use AI features.");
   }
-  
-  if (!ai) {
-    console.error("API Key is missing. Please set VITE_API_KEY or REACT_APP_API_KEY in your environment variables.");
-    return [];
-  }
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-pro-preview",
       contents: `Generate a detailed construction cost estimate for the following project: "${projectDescription}". 
       Break it down into materials and labor. Be realistic with current market prices in India (INR).`,
       config: {
@@ -68,10 +45,11 @@ export const generateConstructionEstimate = async (projectDescription: string): 
       }
     });
 
+    // Access text as a property of GenerateContentResponse.
     const text = response.text;
     if (!text) return [];
 
-    const data = JSON.parse(text);
+    const data = JSON.parse(text.trim());
     return data.items || [];
   } catch (error) {
     console.error("Error generating estimate:", error);
@@ -79,19 +57,16 @@ export const generateConstructionEstimate = async (projectDescription: string): 
   }
 };
 
+// Use gemini-3-flash-preview for general-purpose chatbot tasks.
 export const chatWithSuperintendent = async (history: { role: string; parts: { text: string }[] }[], newMessage: string) => {
   if (!navigator.onLine) {
     return "Connection lost. I am in offline mode. I will be back when the internet is restored.";
   }
 
-  if (!ai) {
-    return "I can't connect right now. Please check your API Key configuration.";
-  }
-
   try {
     const chat = ai.chats.create({
-      model: "gemini-2.5-flash",
-      history: history,
+      model: "gemini-3-flash-preview",
+      // History is passed to maintain context between turns.
       config: {
         systemInstruction: "You are a seasoned Construction Site Superintendent with 30 years of experience in India. You are knowledgeable about IS codes, safety regulations, project scheduling, concrete, framing, electrical, and plumbing basics. You are tough but helpful, prioritizing safety and quality above all else. Keep answers concise and actionable."
       }

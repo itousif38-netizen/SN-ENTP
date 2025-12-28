@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Project, Worker } from '../types';
 import { Users, Search, Filter, Plus, UserPlus, Pencil, Trash2 } from 'lucide-react';
@@ -29,27 +28,43 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
     exitDate: ''
   });
 
+  /**
+   * Generates a project key based on business rules:
+   * 1. Prioritize codes with digits (like S3)
+   * 2. Otherwise use initials of first two words (like LD)
+   */
+  const extractProjectKey = (projectName: string): string => {
+    const words = projectName.trim().split(/\s+/);
+    
+    // Rule 1: Look for a word that contains both letters and numbers (e.g., S3)
+    const specialKey = words.find(word => /[A-Za-z]/.test(word) && /\d/.test(word));
+    if (specialKey) return specialKey.toUpperCase();
+
+    // Rule 2: Use initials of the first two significant words
+    const filteredWords = words.filter(w => !['ECO', 'CITY', 'COMPLEX', 'RENO', 'SITE', 'OFFICE', 'HOMES'].includes(w.toUpperCase()));
+    const key = filteredWords.length >= 2 
+      ? (filteredWords[0][0] + filteredWords[1][0]) 
+      : filteredWords[0]?.substring(0, 2) || 'XX';
+    
+    return key.toUpperCase();
+  };
+
   // Auto-generate ID when Project Changes
   useEffect(() => {
     if (!editingId && formData.projectId) {
         const project = projects.find(p => p.id === formData.projectId);
         if (project) {
             // Count existing workers for this project to determine sequence
-            const existingCount = workers.filter(w => w.projectId === formData.projectId).length;
-            const nextSeq = (existingCount + 1).toString().padStart(3, '0');
+            const projectWorkers = workers.filter(w => w.projectId === formData.projectId);
+            const nextSeq = (projectWorkers.length + 1).toString().padStart(3, '0');
             
-            let baseCode = project.projectCode || '';
+            // Use project code if user manually entered one, otherwise extract from name
+            const projectKey = project.projectCode && project.projectCode.includes('/') 
+              ? project.projectCode.split('/').pop()?.split('-')[0] || project.projectCode 
+              : extractProjectKey(project.name);
             
-            // Logic to ensure SNE/ prefix format: SNE/ProjectCode-SeqNumber
-            if (!baseCode) {
-                 // Fallback: Use initials if no code provided
-                 const initials = project.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 3);
-                 baseCode = `SNE/${initials}`;
-            } else if (!baseCode.toUpperCase().startsWith('SNE/')) {
-                 baseCode = `SNE/${baseCode}`;
-            }
-            
-            const autoId = `${baseCode}-${nextSeq}`;
+            // Standardizing on SNE/ prefix for consistency
+            const autoId = `SNE/${projectKey}/${nextSeq}`;
             setFormData(prev => ({ ...prev, workerId: autoId }));
         }
     }
@@ -110,7 +125,6 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
           }
       }
 
-      // Check for Duplicate Serial Number in the same project
       const duplicateSerial = workers.some(w => 
         w.projectId === formData.projectId && 
         w.serialNo === Number(formData.serialNo) && 
@@ -128,7 +142,6 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
 
     if (formData.name && formData.projectId) {
       if (editingId) {
-        // Update
         const updatedWorker: Worker = {
             id: editingId,
             workerId: formData.workerId || '',
@@ -141,10 +154,9 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
         };
         onEditWorker(updatedWorker);
       } else {
-        // Create
         onAddWorker({
           id: Date.now().toString(),
-          workerId: formData.workerId || `W-${workers.length + 101}`,
+          workerId: formData.workerId || `SNE/UNK/001`,
           name: formData.name || '',
           projectId: formData.projectId || '',
           designation: formData.designation || 'Worker',
@@ -162,7 +174,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Workers Management</h1>
-          <p className="text-slate-500">2. Workers: Record details and track headcount per site.</p>
+          <p className="text-slate-500 text-sm">Register personnel and auto-generate project-specific IDs.</p>
         </div>
         <button 
           onClick={() => {
@@ -176,58 +188,56 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
         </button>
       </div>
 
-      {/* Add/Edit Form */}
       {isFormOpen && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-top-2">
-           <h3 className="font-semibold mb-4">{editingId ? 'Edit Worker Details' : 'Register New Worker'}</h3>
+           <h3 className="font-semibold mb-4 text-slate-800">{editingId ? 'Edit Worker Details' : 'Register New Worker'}</h3>
            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Project Site *</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Project Site *</label>
                 <select 
-                    className={`w-full border p-2 rounded ${errors.projectId ? 'border-red-500' : ''}`}
+                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.projectId ? 'border-red-500' : 'border-slate-200'}`}
                     value={formData.projectId} 
                     onChange={e => setFormData({...formData, projectId: e.target.value})} 
                 >
                   <option value="">Select Project</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
-                {errors.projectId && <p className="text-red-500 text-xs mt-1">{errors.projectId}</p>}
+                {errors.projectId && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.projectId}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Worker ID (Auto-Generated)</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Generated ID</label>
                 <input 
                     type="text" 
-                    className="w-full border p-2 rounded bg-slate-50 font-mono text-slate-700" 
+                    className="w-full border border-slate-200 p-2.5 rounded-lg bg-slate-50 font-mono text-blue-600 font-bold" 
                     value={formData.workerId} 
-                    onChange={e => setFormData({...formData, workerId: e.target.value})} 
-                    placeholder="Select Project first"
                     readOnly
                 />
+                <p className="text-[9px] text-slate-400 mt-1 italic">Format: SNE/[ProjectKey]/[Seq]</p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">SR No *</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">SR No *</label>
                 <input 
                     type="number" 
-                    className={`w-full border p-2 rounded ${errors.serialNo ? 'border-red-500' : ''}`}
+                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.serialNo ? 'border-red-500' : 'border-slate-200'}`}
                     value={formData.serialNo} 
                     onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} 
                 />
-                {errors.serialNo && <p className="text-red-500 text-xs mt-1">{errors.serialNo}</p>}
+                {errors.serialNo && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.serialNo}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Full Name *</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Full Name *</label>
                 <input 
                     type="text" 
-                    className={`w-full border p-2 rounded ${errors.name ? 'border-red-500' : ''}`}
+                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.name ? 'border-red-500' : 'border-slate-200'}`}
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})} 
                 />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                {errors.name && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Designation *</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Designation *</label>
                 <select 
-                  className={`w-full border p-2 rounded ${errors.designation ? 'border-red-500' : ''}`}
+                  className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.designation ? 'border-red-500' : 'border-slate-200'}`}
                   value={formData.designation} 
                   onChange={e => setFormData({...formData, designation: e.target.value})} 
                 >
@@ -238,32 +248,25 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
                   <option value="Fitter">Fitter</option>
                   <option value="Rigger">Rigger</option>
                   <option value="Mason">Mason</option>
+                  <option value="Electrician">Electrician</option>
+                  <option value="Plumber">Plumber</option>
                 </select>
-                {errors.designation && <p className="text-red-500 text-xs mt-1">{errors.designation}</p>}
+                {errors.designation && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.designation}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Joining Date *</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Joining Date *</label>
                 <input 
                     type="date" 
-                    className={`w-full border p-2 rounded ${errors.joiningDate ? 'border-red-500' : ''}`}
+                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.joiningDate ? 'border-red-500' : 'border-slate-200'}`}
                     value={formData.joiningDate} 
                     onChange={e => setFormData({...formData, joiningDate: e.target.value})} 
                 />
-                {errors.joiningDate && <p className="text-red-500 text-xs mt-1">{errors.joiningDate}</p>}
+                {errors.joiningDate && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.joiningDate}</p>}
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Exit Date (Optional)</label>
-                <input 
-                    type="date" 
-                    className={`w-full border p-2 rounded ${errors.exitDate ? 'border-red-500' : ''}`}
-                    value={formData.exitDate} 
-                    onChange={e => setFormData({...formData, exitDate: e.target.value})} 
-                />
-                {errors.exitDate && <p className="text-red-500 text-xs mt-1">{errors.exitDate}</p>}
-              </div>
-              <div className="md:col-span-3 flex justify-end mt-2">
-                <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700">
-                    {editingId ? 'Update Worker' : 'Save Worker'}
+              <div className="md:col-span-3 flex justify-end mt-4 gap-3">
+                <button type="button" onClick={resetForm} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium">Cancel</button>
+                <button type="submit" className="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 shadow-md font-bold text-sm">
+                    {editingId ? 'Update Worker' : 'Complete Registration'}
                 </button>
               </div>
            </form>
@@ -271,13 +274,12 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Toolbar */}
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
           <div className="flex flex-col sm:flex-row gap-4 items-center w-full sm:w-auto">
             <div className="flex items-center gap-2">
                 <Filter size={18} className="text-slate-500" />
                 <select 
-                className="border-none bg-slate-100 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-orange-500 min-w-[200px]"
+                className="border-none bg-slate-100 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 min-w-[200px]"
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
                 >
@@ -293,76 +295,73 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
                 <input 
                     type="text" 
                     placeholder="Search by Name or ID..." 
-                    className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
+                    className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
           </div>
           
-          <div className="text-sm text-slate-500 whitespace-nowrap">
-             Showing {filteredWorkers.length} workers
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+             Total Pool: {filteredWorkers.length} Personnel
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 font-semibold text-slate-700">SR No</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">ID No</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Name</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Project</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Designation</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Joining Date</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Exit Date</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Action</th>
+                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">SR</th>
+                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Worker ID</th>
+                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Name</th>
+                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Project</th>
+                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Designation</th>
+                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Joining</th>
+                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-100">
               {filteredWorkers.map((worker) => (
-                <tr key={worker.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-slate-500">{worker.serialNo}</td>
-                  <td className="px-6 py-4 font-mono text-slate-600">{worker.workerId}</td>
-                  <td className="px-6 py-4 font-medium text-slate-900">{worker.name}</td>
-                  <td className="px-6 py-4 text-slate-600">
+                <tr key={worker.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-6 py-4 text-slate-400 font-mono text-xs">{worker.serialNo}</td>
+                  <td className="px-6 py-4">
+                    <span className="font-mono text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-100 text-xs">
+                       {worker.workerId}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 font-bold text-slate-900">{worker.name}</td>
+                  <td className="px-6 py-4 text-slate-500 text-xs">
                     {projects.find(p => p.id === worker.projectId)?.name || 'Unknown'}
                   </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs border border-blue-100">
+                  <td className="px-6 py-4">
+                    <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] font-bold uppercase border border-slate-200">
                       {worker.designation}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{worker.joiningDate}</td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {worker.exitDate ? (
-                        <span className="text-red-600 font-medium">{worker.exitDate}</span>
-                    ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">Active</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 flex gap-2">
-                    <button 
-                        onClick={() => handleEditClick(worker)}
-                        className="text-slate-400 hover:text-blue-600"
-                        title="Edit"
-                    >
-                        <Pencil size={16} />
-                    </button>
-                    <button 
-                        onClick={() => handleDeleteClick(worker.id)}
-                        className="text-slate-400 hover:text-red-600"
-                        title="Delete"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                  <td className="px-6 py-4 text-slate-500 text-xs">{worker.joiningDate}</td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                            onClick={() => handleEditClick(worker)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                            title="Edit"
+                        >
+                            <Pencil size={14} />
+                        </button>
+                        <button 
+                            onClick={() => handleDeleteClick(worker.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                            title="Delete"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {filteredWorkers.length === 0 && (
                   <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
                           No workers found matching your search.
                       </td>
                   </tr>
