@@ -26,20 +26,32 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
     joiningDate: new Date().toISOString().split('T')[0]
   });
 
+  /**
+   * Refined ID Generation Logic:
+   * Example 1: "Sanghvi S3 eco city" -> SN/S3/001
+   * Example 2: "Lodha Divino" -> SNE/LD/001
+   */
   const generateBusinessID = (project: Project, seq: number): string => {
     const name = project.name.trim();
     const words = name.split(/\s+/);
+    
+    // Prefix Decision: "SN" for Sanghvi/S-projects, "SNE" for others
     const prefix = name.toUpperCase().startsWith('S') ? 'SN' : 'SNE';
+
+    // Key Extraction: Look for alphanumeric codes (like S3) first
     let key = '';
     const specialKey = words.find(w => /[A-Za-z]/.test(w) && /\d/.test(w));
+    
     if (specialKey) {
         key = specialKey.toUpperCase();
     } else {
+        // Initials Logic for normal names
         const filtered = words.filter(w => !['ECO', 'CITY', 'LTD', 'CORP', 'PROJECT', 'SITE'].includes(w.toUpperCase()));
         key = filtered.length >= 2 
             ? (filtered[0][0] + filtered[1][0]) 
             : (filtered[0]?.substring(0, 2) || 'XX');
     }
+
     return `${prefix}/${key.toUpperCase()}/${seq.toString().padStart(3, '0')}`;
   };
 
@@ -72,6 +84,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.projectId) return;
+
     if (editingId) {
       onEditWorker({ ...formData as Worker, id: editingId });
     } else {
@@ -178,6 +191,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
           </div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{filteredWorkers.length} Active Personnel</span>
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">

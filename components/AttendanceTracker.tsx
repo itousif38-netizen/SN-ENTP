@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Project, Worker, AttendanceRecord } from '../types';
-import { Calendar, UserCheck, UserX, Clock, Save, Filter, CheckCircle2 } from 'lucide-react';
+import { Project, Worker, AttendanceRecord } from '../types.ts';
+import { Calendar, UserCheck, UserX, Clock, Save, CheckCircle2 } from 'lucide-react';
 
 interface AttendanceTrackerProps {
   projects: Project[];
@@ -16,16 +16,13 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ projects, workers
   const [currentRecords, setCurrentRecords] = useState<Record<string, 'Present' | 'Absent' | 'Half Day'>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
 
-  // Filter workers by project
   const projectWorkers = workers.filter(w => w.projectId === selectedProjectId);
 
-  // Load existing records when date or project changes
   useEffect(() => {
     if (selectedProjectId && selectedDate) {
       const existing = attendance.filter(a => a.projectId === selectedProjectId && a.date === selectedDate);
       const recordMap: Record<string, 'Present' | 'Absent' | 'Half Day'> = {};
       
-      // Default to absent or existing status
       projectWorkers.forEach(w => {
         const found = existing.find(e => e.workerId === w.id);
         recordMap[w.id] = found ? found.status : 'Absent';
@@ -55,11 +52,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ projects, workers
 
   const handleSave = () => {
     if (!selectedProjectId) return;
-
-    // Filter out previous records for this specific date/project to avoid duplicates
     const otherRecords = attendance.filter(a => !(a.projectId === selectedProjectId && a.date === selectedDate));
-    
-    // Create new records
     const newRecords: AttendanceRecord[] = projectWorkers.map(w => ({
       id: `${w.id}-${selectedDate}`,
       workerId: w.id,
@@ -67,13 +60,11 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ projects, workers
       date: selectedDate,
       status: currentRecords[w.id] || 'Absent'
     }));
-
     onUpdateAttendance([...otherRecords, ...newRecords]);
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 3000);
   };
 
-  // Stats for the selected day
   const presentCount = Object.values(currentRecords).filter(s => s === 'Present').length;
   const absentCount = Object.values(currentRecords).filter(s => s === 'Absent').length;
   const halfDayCount = Object.values(currentRecords).filter(s => s === 'Half Day').length;
@@ -109,7 +100,6 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ projects, workers
           />
         </div>
         
-        {/* Quick Stats */}
         {selectedProjectId && (
           <div className="flex-1 flex gap-2 justify-end">
             <div className="bg-green-50 text-green-700 px-3 py-1 rounded-lg border border-green-100 text-xs font-semibold flex flex-col items-center">
@@ -143,7 +133,6 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ projects, workers
               </button>
             </div>
           </div>
-          
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
@@ -166,31 +155,23 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ projects, workers
                         <button
                           onClick={() => handleStatusChange(worker.id, 'Present')}
                           className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                            currentRecords[worker.id] === 'Present'
-                              ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                            currentRecords[worker.id] === 'Present' ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
                           <UserCheck size={14} /> Present
                         </button>
-                        
                         <button
                           onClick={() => handleStatusChange(worker.id, 'Half Day')}
                           className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                            currentRecords[worker.id] === 'Half Day'
-                              ? 'bg-yellow-500 text-white border-yellow-500 shadow-sm'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                            currentRecords[worker.id] === 'Half Day' ? 'bg-yellow-500 text-white border-yellow-500 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
                           <Clock size={14} /> Half Day
                         </button>
-
                         <button
                           onClick={() => handleStatusChange(worker.id, 'Absent')}
                           className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                            currentRecords[worker.id] === 'Absent'
-                              ? 'bg-red-600 text-white border-red-600 shadow-sm'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                            currentRecords[worker.id] === 'Absent' ? 'bg-red-600 text-white border-red-600 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
                           <UserX size={14} /> Absent
@@ -199,15 +180,9 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ projects, workers
                     </td>
                   </tr>
                 ))}
-                {projectWorkers.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="p-8 text-center text-slate-500">No workers found in this project.</td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
-
           <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
              <button 
                 onClick={handleSave}
