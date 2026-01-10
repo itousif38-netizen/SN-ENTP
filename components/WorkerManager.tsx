@@ -27,48 +27,67 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
   });
 
   /**
-   * Refined ID Generation Logic:
-   * Example 1: "Sanghvi S3 eco city" -> SN/S3/001
-   * Example 2: "Lodha Divino" -> SNE/LD/001
+   * Refined Business ID Generation Logic:
+   * 1. Prefix: "SN" for projects starting with 'S' (Sanghvi), "SNE" for others.
+   * 2. Key: Extracts alphanumeric codes (S3, R2) or initials (LD).
+   * 3. Sequence: Scans existing workforce to find the next unique number.
    */
   const generateBusinessID = (project: Project, seq: number): string => {
     const name = project.name.trim();
     const words = name.split(/\s+/);
     
-    // Prefix Decision: "SN" for Sanghvi/S-projects, "SNE" for others
+    // Prefix: Company standard logic
     const prefix = name.toUpperCase().startsWith('S') ? 'SN' : 'SNE';
 
-    // Key Extraction: Look for alphanumeric codes (like S3) first
-    let key = '';
-    const specialKey = words.find(w => /[A-Za-z]/.test(w) && /\d/.test(w));
+    // Key Extraction: Look for alphanumeric codes like "S3"
+    let siteKey = '';
+    const alphaNumKey = words.find(w => /[A-Za-z]/.test(w) && /\d/.test(w));
     
-    if (specialKey) {
-        key = specialKey.toUpperCase();
+    if (alphaNumKey) {
+      siteKey = alphaNumKey.toUpperCase();
     } else {
-        // Initials Logic for normal names
-        const filtered = words.filter(w => !['ECO', 'CITY', 'LTD', 'CORP', 'PROJECT', 'SITE'].includes(w.toUpperCase()));
-        key = filtered.length >= 2 
-            ? (filtered[0][0] + filtered[1][0]) 
-            : (filtered[0]?.substring(0, 2) || 'XX');
+      // Use initials if no alphanumeric code is present
+      const filteredWords = words.filter(w => !['ECO', 'CITY', 'LTD', 'CORP', 'PROJECT', 'SITE'].includes(w.toUpperCase()));
+      siteKey = filteredWords.length >= 2 
+        ? (filteredWords[0][0] + filteredWords[1][0]) 
+        : (filteredWords[0]?.substring(0, 2) || 'XX');
     }
 
-    return `${prefix}/${key.toUpperCase()}/${seq.toString().padStart(3, '0')}`;
+    const paddedSeq = seq.toString().padStart(3, '0');
+    return `${prefix}/${siteKey.toUpperCase()}/${paddedSeq}`;
   };
 
+  // Automatically update ID when site is selected
   useEffect(() => {
     if (!editingId && formData.projectId) {
-        const project = projects.find(p => p.id === formData.projectId);
-        if (project) {
-            const projectWorkerCount = workers.filter(w => w.projectId === formData.projectId).length;
-            const newId = generateBusinessID(project, projectWorkerCount + 1);
-            setFormData(prev => ({ ...prev, workerId: newId }));
+      const project = projects.find(p => p.id === formData.projectId);
+      if (project) {
+        // Robust sequence detection: Find max sequence in current site
+        const siteWorkers = workers.filter(w => w.projectId === formData.projectId);
+        let nextSeq = 1;
+        
+        if (siteWorkers.length > 0) {
+          const maxSeq = siteWorkers.reduce((max, w) => {
+            const parts = w.workerId.split('/');
+            const lastPart = parts[parts.length - 1];
+            const seqVal = parseInt(lastPart);
+            return !isNaN(seqVal) ? Math.max(max, seqVal) : max;
+          }, 0);
+          nextSeq = maxSeq + 1;
         }
+
+        const newId = generateBusinessID(project, nextSeq);
+        setFormData(prev => ({ ...prev, workerId: newId }));
+      }
     }
   }, [formData.projectId, editingId, projects, workers]);
 
   const filteredWorkers = workers.filter(w => {
     const matchesProject = selectedProject === 'All' || w.projectId === selectedProject;
-    return matchesProject && (w.name.toLowerCase().includes(searchTerm.toLowerCase()) || w.workerId.includes(searchTerm));
+    return matchesProject && (
+      w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      w.workerId.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   const resetForm = () => {
@@ -76,14 +95,20 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
     setEditingId(null);
     setFormData({
       serialNo: workers.length + 1,
-      workerId: '', name: '', projectId: '', designation: '',
+      workerId: '', 
+      name: '', 
+      projectId: '', 
+      designation: '',
       joiningDate: new Date().toISOString().split('T')[0]
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.projectId) return;
+    if (!formData.name || !formData.projectId) {
+      alert("Name and Project are mandatory.");
+      return;
+    }
 
     if (editingId) {
       onEditWorker({ ...formData as Worker, id: editingId });
@@ -186,7 +211,7 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
                 </select>
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                    <input type="text" placeholder="Search workers..." className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs w-64" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input type="text" placeholder="Search by name or ID..." className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs w-64" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
           </div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{filteredWorkers.length} Active Personnel</span>
