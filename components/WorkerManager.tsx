@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Project, Worker } from '../types';
-import { Users, Search, Filter, Plus, UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { Project, Worker } from '../types.ts';
+import { Search, Filter, UserPlus, Pencil, Trash2, ShieldCheck } from 'lucide-react';
 
 interface WorkerManagerProps {
   workers: Worker[];
@@ -16,7 +16,6 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState<Partial<Worker>>({
     serialNo: workers.length + 1,
@@ -24,348 +23,195 @@ const WorkerManager: React.FC<WorkerManagerProps> = ({ workers, projects, onAddW
     name: '',
     projectId: '',
     designation: '',
-    joiningDate: new Date().toISOString().split('T')[0],
-    exitDate: ''
+    joiningDate: new Date().toISOString().split('T')[0]
   });
 
-  /**
-   * Generates a project key based on business rules:
-   * 1. Prioritize codes with digits (like S3)
-   * 2. Otherwise use initials of first two words (like LD)
-   */
-  const extractProjectKey = (projectName: string): string => {
-    const words = projectName.trim().split(/\s+/);
-    
-    // Rule 1: Look for a word that contains both letters and numbers (e.g., S3)
-    const specialKey = words.find(word => /[A-Za-z]/.test(word) && /\d/.test(word));
-    if (specialKey) return specialKey.toUpperCase();
-
-    // Rule 2: Use initials of the first two significant words
-    const filteredWords = words.filter(w => !['ECO', 'CITY', 'COMPLEX', 'RENO', 'SITE', 'OFFICE', 'HOMES'].includes(w.toUpperCase()));
-    const key = filteredWords.length >= 2 
-      ? (filteredWords[0][0] + filteredWords[1][0]) 
-      : filteredWords[0]?.substring(0, 2) || 'XX';
-    
-    return key.toUpperCase();
+  const generateBusinessID = (project: Project, seq: number): string => {
+    const name = project.name.trim();
+    const words = name.split(/\s+/);
+    const prefix = name.toUpperCase().startsWith('S') ? 'SN' : 'SNE';
+    let key = '';
+    const specialKey = words.find(w => /[A-Za-z]/.test(w) && /\d/.test(w));
+    if (specialKey) {
+        key = specialKey.toUpperCase();
+    } else {
+        const filtered = words.filter(w => !['ECO', 'CITY', 'LTD', 'CORP', 'PROJECT', 'SITE'].includes(w.toUpperCase()));
+        key = filtered.length >= 2 
+            ? (filtered[0][0] + filtered[1][0]) 
+            : (filtered[0]?.substring(0, 2) || 'XX');
+    }
+    return `${prefix}/${key.toUpperCase()}/${seq.toString().padStart(3, '0')}`;
   };
 
-  // Auto-generate ID when Project Changes
   useEffect(() => {
     if (!editingId && formData.projectId) {
         const project = projects.find(p => p.id === formData.projectId);
         if (project) {
-            // Count existing workers for this project to determine sequence
-            const projectWorkers = workers.filter(w => w.projectId === formData.projectId);
-            const nextSeq = (projectWorkers.length + 1).toString().padStart(3, '0');
-            
-            // Use project code if user manually entered one, otherwise extract from name
-            const projectKey = project.projectCode && project.projectCode.includes('/') 
-              ? project.projectCode.split('/').pop()?.split('-')[0] || project.projectCode 
-              : extractProjectKey(project.name);
-            
-            // Standardizing on SNE/ prefix for consistency
-            const autoId = `SNE/${projectKey}/${nextSeq}`;
-            setFormData(prev => ({ ...prev, workerId: autoId }));
+            const projectWorkerCount = workers.filter(w => w.projectId === formData.projectId).length;
+            const newId = generateBusinessID(project, projectWorkerCount + 1);
+            setFormData(prev => ({ ...prev, workerId: newId }));
         }
     }
   }, [formData.projectId, editingId, projects, workers]);
 
   const filteredWorkers = workers.filter(w => {
     const matchesProject = selectedProject === 'All' || w.projectId === selectedProject;
-    const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          w.workerId.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesProject && matchesSearch;
+    return matchesProject && (w.name.toLowerCase().includes(searchTerm.toLowerCase()) || w.workerId.includes(searchTerm));
   });
-
-  const workerCounts = projects.reduce((acc, project) => {
-    acc[project.id] = workers.filter(w => w.projectId === project.id).length;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const handleEditClick = (worker: Worker) => {
-    setEditingId(worker.id);
-    setErrors({});
-    setFormData({ ...worker, exitDate: worker.exitDate || '' });
-    setIsFormOpen(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleDeleteClick = (id: string) => {
-      if(window.confirm('Are you sure you want to remove this worker?')) {
-          onDeleteWorker(id);
-      }
-  };
 
   const resetForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
-    setErrors({});
     setFormData({
       serialNo: workers.length + 1,
-      workerId: '',
-      name: '',
-      projectId: '',
-      designation: '',
-      joiningDate: new Date().toISOString().split('T')[0],
-      exitDate: ''
+      workerId: '', name: '', projectId: '', designation: '',
+      joiningDate: new Date().toISOString().split('T')[0]
     });
-  };
-
-  const validateForm = () => {
-      const newErrors: Record<string, string> = {};
-      if (!formData.projectId) newErrors.projectId = "Project is required.";
-      if (!formData.name?.trim()) newErrors.name = "Worker Name is required.";
-      if (!formData.serialNo || Number(formData.serialNo) <= 0) newErrors.serialNo = "Valid SR No is required.";
-      if (!formData.designation) newErrors.designation = "Designation is required.";
-      if (!formData.joiningDate) newErrors.joiningDate = "Joining Date is required.";
-      
-      if (formData.joiningDate && formData.exitDate) {
-          if (new Date(formData.exitDate) < new Date(formData.joiningDate)) {
-              newErrors.exitDate = "Exit Date cannot be before Joining Date.";
-          }
-      }
-
-      const duplicateSerial = workers.some(w => 
-        w.projectId === formData.projectId && 
-        w.serialNo === Number(formData.serialNo) && 
-        w.id !== editingId
-      );
-      if (duplicateSerial) newErrors.serialNo = "Serial No already used in this project.";
-
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
-    if (formData.name && formData.projectId) {
-      if (editingId) {
-        const updatedWorker: Worker = {
-            id: editingId,
-            workerId: formData.workerId || '',
-            name: formData.name || '',
-            projectId: formData.projectId || '',
-            designation: formData.designation || '',
-            joiningDate: formData.joiningDate || '',
-            exitDate: formData.exitDate || '',
-            serialNo: Number(formData.serialNo)
-        };
-        onEditWorker(updatedWorker);
-      } else {
-        onAddWorker({
-          id: Date.now().toString(),
-          workerId: formData.workerId || `SNE/UNK/001`,
-          name: formData.name || '',
-          projectId: formData.projectId || '',
-          designation: formData.designation || 'Worker',
-          joiningDate: formData.joiningDate || '',
-          exitDate: formData.exitDate || '',
-          serialNo: Number(formData.serialNo)
-        });
-      }
-      resetForm();
+    if (!formData.name || !formData.projectId) return;
+    if (editingId) {
+      onEditWorker({ ...formData as Worker, id: editingId });
+    } else {
+      onAddWorker({ ...formData as Worker, id: Date.now().toString(), serialNo: Number(formData.serialNo) });
     }
+    resetForm();
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Workers Management</h1>
-          <p className="text-slate-500 text-sm">Register personnel and auto-generate project-specific IDs.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Workforce Register</h1>
+          <p className="text-slate-500 text-sm">Personnel deployment with automated business IDs.</p>
         </div>
         <button 
-          onClick={() => {
-            if(isFormOpen) resetForm();
-            else setIsFormOpen(true);
-          }}
-          className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"
+          onClick={() => isFormOpen ? resetForm() : setIsFormOpen(true)}
+          className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md"
         >
           <UserPlus size={16} />
-          {isFormOpen ? 'Cancel' : 'Add Worker'}
+          {isFormOpen ? 'Cancel' : 'Register Worker'}
         </button>
       </div>
 
       {isFormOpen && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-top-2">
-           <h3 className="font-semibold mb-4 text-slate-800">{editingId ? 'Edit Worker Details' : 'Register New Worker'}</h3>
-           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xl animate-fade-in-up">
+           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Project Site *</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Project Site *</label>
                 <select 
-                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.projectId ? 'border-red-500' : 'border-slate-200'}`}
+                    className="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     value={formData.projectId} 
                     onChange={e => setFormData({...formData, projectId: e.target.value})} 
                 >
-                  <option value="">Select Project</option>
+                  <option value="">Select Site</option>
                   {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
-                {errors.projectId && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.projectId}</p>}
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Generated ID</label>
-                <input 
-                    type="text" 
-                    className="w-full border border-slate-200 p-2.5 rounded-lg bg-slate-50 font-mono text-blue-600 font-bold" 
-                    value={formData.workerId} 
-                    readOnly
-                />
-                <p className="text-[9px] text-slate-400 mt-1 italic">Format: SNE/[ProjectKey]/[Seq]</p>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Generated ID</label>
+                <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <ShieldCheck size={16} className="text-emerald-500" />
+                    <span className="font-mono font-bold text-blue-600">{formData.workerId || 'AUTO-GEN'}</span>
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">SR No *</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Serial Number *</label>
                 <input 
                     type="number" 
-                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.serialNo ? 'border-red-500' : 'border-slate-200'}`}
+                    className="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     value={formData.serialNo} 
                     onChange={e => setFormData({...formData, serialNo: Number(e.target.value)})} 
                 />
-                {errors.serialNo && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.serialNo}</p>}
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Full Name *</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Worker Full Name *</label>
                 <input 
                     type="text" 
-                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.name ? 'border-red-500' : 'border-slate-200'}`}
+                    className="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})} 
                 />
-                {errors.name && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Designation *</label>
-                <select 
-                  className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.designation ? 'border-red-500' : 'border-slate-200'}`}
-                  value={formData.designation} 
-                  onChange={e => setFormData({...formData, designation: e.target.value})} 
-                >
-                  <option value="">Select Designation</option>
-                  <option value="Sr. Carpenter">Sr. Carpenter</option>
-                  <option value="Carpenter">Carpenter</option>
-                  <option value="Helper">Helper</option>
-                  <option value="Fitter">Fitter</option>
-                  <option value="Rigger">Rigger</option>
-                  <option value="Mason">Mason</option>
-                  <option value="Electrician">Electrician</option>
-                  <option value="Plumber">Plumber</option>
-                </select>
-                {errors.designation && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.designation}</p>}
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Designation</label>
+                <input 
+                    type="text" 
+                    className="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.designation} 
+                    placeholder="e.g. Carpenter"
+                    onChange={e => setFormData({...formData, designation: e.target.value})} 
+                />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Joining Date *</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Date Joined</label>
                 <input 
                     type="date" 
-                    className={`w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${errors.joiningDate ? 'border-red-500' : 'border-slate-200'}`}
+                    className="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     value={formData.joiningDate} 
                     onChange={e => setFormData({...formData, joiningDate: e.target.value})} 
                 />
-                {errors.joiningDate && <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.joiningDate}</p>}
               </div>
-              <div className="md:col-span-3 flex justify-end mt-4 gap-3">
-                <button type="button" onClick={resetForm} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium">Cancel</button>
-                <button type="submit" className="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 shadow-md font-bold text-sm">
-                    {editingId ? 'Update Worker' : 'Complete Registration'}
+              <div className="md:col-span-3 flex justify-end mt-4">
+                <button type="submit" className="bg-blue-600 text-white px-10 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-200">
+                    Finalize Registration
                 </button>
               </div>
            </form>
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="flex flex-col sm:flex-row gap-4 items-center w-full sm:w-auto">
-            <div className="flex items-center gap-2">
-                <Filter size={18} className="text-slate-500" />
-                <select 
-                className="border-none bg-slate-100 rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500 min-w-[200px]"
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                >
-                <option value="All">All Sites ({workers.length})</option>
-                {projects.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({workerCounts[p.id] || 0})</option>
-                ))}
+          <div className="flex gap-4 items-center">
+                <Filter size={18} className="text-slate-400" />
+                <select className="bg-slate-100 rounded-lg py-2 px-3 text-xs font-bold border-none" value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}>
+                    <option value="All">All Projects</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
-            </div>
-
-            <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input 
-                    type="text" 
-                    placeholder="Search by Name or ID..." 
-                    className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                    <input type="text" placeholder="Search workers..." className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs w-64" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
           </div>
-          
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-             Total Pool: {filteredWorkers.length} Personnel
-          </div>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{filteredWorkers.length} Active Personnel</span>
         </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
               <tr>
-                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">SR</th>
-                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Worker ID</th>
-                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Name</th>
-                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Project</th>
-                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Designation</th>
-                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs">Joining</th>
-                <th className="px-6 py-4 font-bold text-slate-700 uppercase tracking-tighter text-xs text-right">Action</th>
+                <th className="px-6 py-4">ID / Ref</th>
+                <th className="px-6 py-4">Full Name</th>
+                <th className="px-6 py-4">Current Site</th>
+                <th className="px-6 py-4">Designation</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredWorkers.map((worker) => (
-                <tr key={worker.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4 text-slate-400 font-mono text-xs">{worker.serialNo}</td>
+                <tr key={worker.id} className="hover:bg-slate-50 group transition-colors">
                   <td className="px-6 py-4">
-                    <span className="font-mono text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-100 text-xs">
+                    <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
                        {worker.workerId}
                     </span>
                   </td>
                   <td className="px-6 py-4 font-bold text-slate-900">{worker.name}</td>
-                  <td className="px-6 py-4 text-slate-500 text-xs">
-                    {projects.find(p => p.id === worker.projectId)?.name || 'Unknown'}
-                  </td>
+                  <td className="px-6 py-4 text-slate-500 text-xs">{projects.find(p => p.id === worker.projectId)?.name}</td>
                   <td className="px-6 py-4">
-                    <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] font-bold uppercase border border-slate-200">
-                      {worker.designation}
+                    <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter">
+                      {worker.designation || 'Worker'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 text-xs">{worker.joiningDate}</td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                            onClick={() => handleEditClick(worker)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                            title="Edit"
-                        >
-                            <Pencil size={14} />
-                        </button>
-                        <button 
-                            onClick={() => handleDeleteClick(worker.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
-                            title="Delete"
-                        >
-                            <Trash2 size={14} />
-                        </button>
+                    <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100">
+                        <button onClick={() => { setEditingId(worker.id); setFormData(worker); setIsFormOpen(true); }} className="text-slate-400 hover:text-blue-600"><Pencil size={14}/></button>
+                        <button onClick={() => onDeleteWorker(worker.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14}/></button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {filteredWorkers.length === 0 && (
-                  <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
-                          No workers found matching your search.
-                      </td>
-                  </tr>
-              )}
             </tbody>
           </table>
         </div>

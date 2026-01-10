@@ -1,29 +1,29 @@
 
-import React, { useState, useEffect } from 'react';
-import { Menu, WifiOff, RefreshCw, Settings, Bell, Search, UserCircle, ChevronDown, Sparkles } from 'lucide-react';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import ProjectList from './components/ProjectList';
-import WorkerManager from './components/WorkerManager';
-import BillingManager from './components/BillingManager';
-import KharchiTracker from './components/KharchiTracker';
-import AdvanceTracker from './components/AdvanceTracker';
-import WorkerPayment from './components/WorkerPayment';
-import ExpenseManager from './components/ExpenseManager';
-import PurchaseManager from './components/PurchaseManager';
-import ExecutionTracker from './components/ExecutionTracker';
-import MessManager from './components/MessManager';
-import GSTDashboard from './components/GSTDashboard';
-import AIEstimator from './components/AIEstimator';
-import AIChat from './components/AIChat';
-import Login from './components/Login';
-import DataBackup from './components/DataBackup';
-import AttendanceTracker from './components/AttendanceTracker';
-import InventoryManager from './components/InventoryManager';
-import { AppView, Project, Worker, Bill, KharchiEntry, AdvanceEntry, ClientPayment, PurchaseEntry, ExecutionLevel, WorkerPayment as WorkerPaymentType, MessEntry, AttendanceRecord, StockConsumption } from './types';
-import { MOCK_PROJECTS, MOCK_WORKERS, MOCK_BILLS, MOCK_KHARCHI, MOCK_ADVANCES, MOCK_CLIENT_PAYMENTS, MOCK_PURCHASES, MOCK_EXECUTION, MOCK_MESS_ENTRIES, MOCK_ATTENDANCE, MOCK_STOCK_CONSUMPTION } from './constants';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Menu, WifiOff, RefreshCw, Bell, ChevronDown, CheckCircle2 } from 'lucide-react';
+import Sidebar from './components/Sidebar.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import ProjectList from './components/ProjectList.tsx';
+import WorkerManager from './components/WorkerManager.tsx';
+import BillingManager from './components/BillingManager.tsx';
+import KharchiTracker from './components/KharchiTracker.tsx';
+import AdvanceTracker from './components/AdvanceTracker.tsx';
+import WorkerPayment from './components/WorkerPayment.tsx';
+import ExpenseManager from './components/ExpenseManager.tsx';
+import PurchaseManager from './components/PurchaseManager.tsx';
+import ExecutionTracker from './components/ExecutionTracker.tsx';
+import MessManager from './components/MessManager.tsx';
+import GSTDashboard from './components/GSTDashboard.tsx';
+import AIEstimator from './components/AIEstimator.tsx';
+import AIChat from './components/AIChat.tsx';
+import Login from './components/Login.tsx';
+import DataBackup from './components/DataBackup.tsx';
+import AttendanceTracker from './components/AttendanceTracker.tsx';
+import InventoryManager from './components/InventoryManager.tsx';
+import { AppView, Project, Worker, Bill, KharchiEntry, AdvanceEntry, ClientPayment, PurchaseEntry, ExecutionLevel, WorkerPayment as WorkerPaymentType, MessEntry, AttendanceRecord, StockConsumption } from './types.ts';
+import { MOCK_PROJECTS, MOCK_WORKERS, MOCK_BILLS, MOCK_KHARCHI, MOCK_ADVANCES, MOCK_CLIENT_PAYMENTS, MOCK_PURCHASES, MOCK_EXECUTION, MOCK_MESS_ENTRIES, MOCK_ATTENDANCE, MOCK_STOCK_CONSUMPTION } from './constants.ts';
 
-// Custom Hook for Local Storage Persistence
+// Custom Hook for Local Storage Persistence with Error Handling
 function usePersistentState<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [state, setState] = useState<T>(() => {
     try {
@@ -46,29 +46,24 @@ function usePersistentState<T>(key: string, initialValue: T): [T, React.Dispatch
   return [state, setState];
 }
 
-// Hook for Online Status
 function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
-
   return isOnline;
 }
 
 function App() {
-  // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Persistent Auth State
+  const [isAuthenticated, setIsAuthenticated] = usePersistentState<boolean>('sn_auth', false);
   const [logoutNotification, setLogoutNotification] = useState<string | null>(null);
 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
@@ -76,40 +71,25 @@ function App() {
   
   const isOnline = useOnlineStatus();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = usePersistentState<string>('sn_last_sync', new Date().toLocaleTimeString());
 
-  // Sync effect when coming back online
-  useEffect(() => {
-    if (isOnline) {
+  // Simulated Background Sync Capability
+  const triggerSync = useCallback(() => {
+    if (isOnline && !isSyncing) {
       setIsSyncing(true);
-      const timer = setTimeout(() => setIsSyncing(false), 2000);
-      return () => clearTimeout(timer);
+      // Mock network latency for sync
+      setTimeout(() => {
+        setIsSyncing(false);
+        setLastSynced(new Date().toLocaleTimeString());
+      }, 1500);
     }
-  }, [isOnline]);
-
-  // PWA Install State
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  }, [isOnline, isSyncing]);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
+    if (isOnline) triggerSync();
+  }, [isOnline, triggerSync]);
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-  };
-
-  // State for data management - PERSISTENT
+  // Data State - PERSISTENT
   const [projects, setProjects] = usePersistentState<Project[]>('sn_projects', MOCK_PROJECTS);
   const [workers, setWorkers] = usePersistentState<Worker[]>('sn_workers', MOCK_WORKERS);
   const [bills, setBills] = usePersistentState<Bill[]>('sn_bills', MOCK_BILLS);
@@ -123,53 +103,58 @@ function App() {
   const [attendance, setAttendance] = usePersistentState<AttendanceRecord[]>('sn_attendance', MOCK_ATTENDANCE);
   const [consumption, setConsumption] = usePersistentState<StockConsumption[]>('sn_consumption', MOCK_STOCK_CONSUMPTION);
 
-  // --- Handlers ---
-  const handleAddProject = (newProject: Project) => setProjects(prev => [...prev, newProject]);
-  const handleAddWorker = (newWorker: Worker) => setWorkers(prev => [...prev, newWorker]);
-  const handleAddBill = (newBill: Bill) => setBills(prev => [...prev, newBill]);
-  const handleAddClientPayment = (newPayment: ClientPayment) => setClientPayments(prev => [...prev, newPayment]);
-  const handleAddAdvance = (newAdvance: AdvanceEntry) => setAdvances(prev => [...prev, newAdvance]);
-  const handleAddPurchase = (newPurchase: PurchaseEntry) => setPurchases(prev => [...prev, newPurchase]);
-  const handleAddExecution = (newExecution: ExecutionLevel) => setExecutionData(prev => [...prev, newExecution]);
-  const handleAddMess = (newMess: MessEntry) => setMessEntries(prev => [...prev, newMess]);
-  const handleAddConsumption = (newConsumption: StockConsumption) => setConsumption(prev => [...prev, newConsumption]);
+  // --- Handlers (Trigger sync on data change if online) ---
+  const wrapWithSync = (handler: Function) => (...args: any[]) => {
+    handler(...args);
+    if (isOnline) triggerSync();
+  };
 
-  const handleEditProject = (updatedProject: Project) => setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-  const handleEditWorker = (updatedWorker: Worker) => setWorkers(prev => prev.map(w => w.id === updatedWorker.id ? updatedWorker : w));
-  const handleEditBill = (updatedBill: Bill) => setBills(prev => prev.map(b => b.id === updatedBill.id ? updatedBill : b));
-  const handleEditClientPayment = (updatedPayment: ClientPayment) => setClientPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p));
-  const handleEditAdvance = (updatedAdvance: AdvanceEntry) => setAdvances(prev => prev.map(a => a.id === updatedAdvance.id ? updatedAdvance : a));
-  const handleEditPurchase = (updatedPurchase: PurchaseEntry) => setPurchases(prev => prev.map(p => p.id === updatedPurchase.id ? updatedPurchase : p));
-  const handleUpdateExecution = (updatedEntry: ExecutionLevel) => setExecutionData(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
-  const handleEditMess = (updatedMess: MessEntry) => setMessEntries(prev => prev.map(m => m.id === updatedMess.id ? updatedMess : m));
+  const handleAddProject = wrapWithSync((newProject: Project) => setProjects(prev => [...prev, newProject]));
+  const handleAddWorker = wrapWithSync((newWorker: Worker) => setWorkers(prev => [...prev, newWorker]));
+  const handleAddBill = wrapWithSync((newBill: Bill) => setBills(prev => [...prev, newBill]));
+  const handleAddClientPayment = wrapWithSync((newPayment: ClientPayment) => setClientPayments(prev => [...prev, newPayment]));
+  const handleAddAdvance = wrapWithSync((newAdvance: AdvanceEntry) => setAdvances(prev => [...prev, newAdvance]));
+  const handleAddPurchase = wrapWithSync((newPurchase: PurchaseEntry) => setPurchases(prev => [...prev, newPurchase]));
+  const handleAddExecution = wrapWithSync((newExecution: ExecutionLevel) => setExecutionData(prev => [...prev, newExecution]));
+  const handleAddMess = wrapWithSync((newMess: MessEntry) => setMessEntries(prev => [...prev, newMess]));
+  const handleAddConsumption = wrapWithSync((newConsumption: StockConsumption) => setConsumption(prev => [...prev, newConsumption]));
 
-  const handleDeleteProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
-  const handleDeleteWorker = (id: string) => setWorkers(prev => prev.filter(w => w.id !== id));
-  const handleDeleteBill = (id: string) => setBills(prev => prev.filter(b => b.id !== id));
-  const handleDeleteClientPayment = (id: string) => setClientPayments(prev => prev.filter(p => p.id !== id));
-  const handleDeleteAdvance = (id: string) => setAdvances(prev => prev.filter(a => a.id !== id));
-  const handleDeletePurchase = (id: string) => setPurchases(prev => prev.filter(p => p.id !== id));
-  const handleDeleteExecution = (id: string) => setExecutionData(prev => prev.filter(e => e.id !== id));
-  const handleDeleteMess = (id: string) => setMessEntries(prev => prev.filter(m => m.id !== id));
-  const handleDeleteConsumption = (id: string) => setConsumption(prev => prev.filter(c => c.id !== id));
+  const handleEditProject = wrapWithSync((updatedProject: Project) => setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p)));
+  const handleEditWorker = wrapWithSync((updatedWorker: Worker) => setWorkers(prev => prev.map(w => w.id === updatedWorker.id ? updatedWorker : w)));
+  const handleEditBill = wrapWithSync((updatedBill: Bill) => setBills(prev => prev.map(b => b.id === updatedBill.id ? updatedBill : b)));
+  const handleEditClientPayment = wrapWithSync((updatedPayment: ClientPayment) => setClientPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p)));
+  const handleEditAdvance = wrapWithSync((updatedAdvance: AdvanceEntry) => setAdvances(prev => prev.map(a => a.id === updatedAdvance.id ? updatedAdvance : a)));
+  const handleEditPurchase = wrapWithSync((updatedPurchase: PurchaseEntry) => setPurchases(prev => prev.map(p => p.id === updatedPurchase.id ? updatedPurchase : p)));
+  const handleUpdateExecution = wrapWithSync((updatedEntry: ExecutionLevel) => setExecutionData(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e)));
+  const handleEditMess = wrapWithSync((updatedMess: MessEntry) => setMessEntries(prev => prev.map(m => m.id === updatedMess.id ? updatedMess : m)));
 
-  const handleUpdateKharchi = (entries: KharchiEntry[]) => {
+  const handleDeleteProject = wrapWithSync((id: string) => setProjects(prev => prev.filter(p => p.id !== id)));
+  const handleDeleteWorker = wrapWithSync((id: string) => setWorkers(prev => prev.filter(w => w.id !== id)));
+  const handleDeleteBill = wrapWithSync((id: string) => setBills(prev => prev.filter(b => b.id !== id)));
+  const handleDeleteClientPayment = wrapWithSync((id: string) => setClientPayments(prev => prev.filter(p => p.id !== id)));
+  const handleDeleteAdvance = wrapWithSync((id: string) => setAdvances(prev => prev.filter(a => a.id !== id)));
+  const handleDeletePurchase = wrapWithSync((id: string) => setPurchases(prev => prev.filter(p => p.id !== id)));
+  const handleDeleteExecution = wrapWithSync((id: string) => setExecutionData(prev => prev.filter(e => e.id !== id)));
+  const handleDeleteMess = wrapWithSync((id: string) => setMessEntries(prev => prev.filter(m => m.id !== id)));
+  const handleDeleteConsumption = wrapWithSync((id: string) => setConsumption(prev => prev.filter(c => c.id !== id)));
+
+  const handleUpdateKharchi = wrapWithSync((entries: KharchiEntry[]) => {
     setKharchi(prev => {
         const otherEntries = prev.filter(p => !entries.some(e => e.id === p.id));
         return [...otherEntries, ...entries];
     });
-  };
+  });
 
-  const handleUpdateAttendance = (entries: AttendanceRecord[]) => {
+  const handleUpdateAttendance = wrapWithSync((entries: AttendanceRecord[]) => {
     setAttendance(entries);
-  };
+  });
 
-  const handleSaveWorkerPayments = (records: WorkerPaymentType[]) => {
+  const handleSaveWorkerPayments = wrapWithSync((records: WorkerPaymentType[]) => {
     setWorkerPayments(prev => {
         const filtered = prev.filter(p => !records.some(r => r.workerId === p.workerId && r.month === p.month));
         return [...filtered, ...records];
     });
-  };
+  });
 
   const handleRestoreData = (data: any) => {
     if (data.projects) setProjects(data.projects);
@@ -184,6 +169,7 @@ function App() {
     if (data.workerPayments) setWorkerPayments(data.workerPayments);
     if (data.attendance) setAttendance(data.attendance);
     if (data.consumption) setConsumption(data.consumption);
+    triggerSync();
   };
 
   const handleLogin = (success: boolean) => {
@@ -210,6 +196,10 @@ function App() {
           attendance={attendance} 
           bills={bills} 
           purchases={purchases} 
+          isOnline={isOnline}
+          isSyncing={isSyncing}
+          lastSynced={lastSynced}
+          onSync={triggerSync}
         />
       );
       case AppView.PROJECTS: return <ProjectList projects={projects} onAddProject={handleAddProject} onEditProject={handleEditProject} onDeleteProject={handleDeleteProject} />;
@@ -228,7 +218,7 @@ function App() {
       case AppView.ESTIMATOR: return <AIEstimator />;
       case AppView.ASSISTANT: return <AIChat />;
       case AppView.BACKUP: return <DataBackup currentData={{ projects, workers, bills, clientPayments, kharchi, advances, purchases, executionData, messEntries, workerPayments, attendance, consumption }} onRestore={handleRestoreData} />;
-      default: return <Dashboard projects={projects} workers={workers} attendance={attendance} bills={bills} purchases={purchases} />;
+      default: return <Dashboard projects={projects} workers={workers} attendance={attendance} bills={bills} purchases={purchases} isOnline={isOnline} isSyncing={isSyncing} lastSynced={lastSynced} onSync={triggerSync} />;
     }
   };
 
@@ -240,82 +230,52 @@ function App() {
         isMobileOpen={isMobileMenuOpen}
         setIsMobileOpen={setIsMobileMenuOpen}
         onLogout={handleLogout}
-        showInstallButton={!!deferredPrompt}
-        onInstallClick={handleInstallClick}
         isOnline={isOnline}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         
-        {/* Pro Top Bar */}
-        <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
-             {/* Mobile Toggle & Brand */}
+        {/* Top Bar */}
+        <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-20">
              <div className="flex items-center gap-4">
-                 <button 
-                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                   className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                 >
+                 <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
                    <Menu size={20} />
                  </button>
-                 
-                 {/* Breadcrumbs / Page Title (Contextual) */}
                  <div className="hidden md:flex flex-col">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">SN Enterprise</span>
                     <div className="flex items-center gap-2">
                        <h2 className="text-sm font-black text-slate-800 tracking-tight">{currentView}</h2>
-                       {currentView === AppView.DASHBOARD && <Sparkles size={14} className="text-blue-500" />}
                     </div>
                  </div>
              </div>
 
-             {/* Right Actions */}
              <div className="flex items-center gap-3">
-                
-                {/* Search Bar */}
-                <div className="hidden lg:flex items-center relative mr-2">
-                    <Search size={14} className="absolute left-3 text-slate-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Find site, worker or invoice..." 
-                      className="bg-slate-100 border-none rounded-xl py-2 pl-9 pr-4 text-xs font-medium focus:ring-2 focus:ring-blue-500 w-48 transition-all focus:w-64"
-                    />
-                </div>
-
-                {!isOnline && (
+                {!isOnline ? (
                     <div className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 border border-red-100 animate-pulse">
-                      <WifiOff size={12} /> <span className="hidden sm:inline">OFFLINE MODE</span>
+                      <WifiOff size={12} /> OFFLINE
                     </div>
-                )}
-                {isOnline && isSyncing && (
-                    <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 border border-blue-100">
-                      <RefreshCw size={12} className="animate-spin" /> <span className="hidden sm:inline">SYNCING DATA</span>
+                ) : (
+                    <div className={`px-3 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 border ${isSyncing ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                      {isSyncing ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                      {isSyncing ? 'SYNCING...' : 'LIVE'}
                     </div>
                 )}
 
                 <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
-
-                <button className="relative text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                <button className="relative text-slate-400 hover:text-slate-600 p-2 rounded-xl">
                     <Bell size={20} />
                     <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                 </button>
-                
-                <div className="flex items-center gap-2 pl-2 cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-colors group">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-slate-700 to-slate-900 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                        AD
-                    </div>
-                    <div className="hidden sm:flex flex-col items-start">
-                        <span className="text-xs font-bold text-slate-700 leading-tight group-hover:text-blue-600 transition-colors">Admin User</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Site Superintendent</span>
-                    </div>
+                <div className="flex items-center gap-2 pl-2">
+                    <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm">AD</div>
                     <ChevronDown size={14} className="text-slate-400 hidden sm:block" />
                 </div>
              </div>
         </div>
 
-        {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative custom-scrollbar bg-[#f8fafc]">
-           <div className="max-w-[1600px] mx-auto pb-10">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar bg-[#f8fafc]">
+           <div className="max-w-[1600px] mx-auto">
               {renderView()}
            </div>
         </main>

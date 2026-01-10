@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AppView } from '../types';
+import { AppView } from '../types.ts';
 import { 
   LayoutDashboard, 
   HardHat, 
@@ -19,7 +19,6 @@ import {
   Utensils,
   BarChart4,
   Database,
-  ChevronRight,
   ClipboardList,
   Package
 } from 'lucide-react';
